@@ -1,0 +1,27 @@
+version: '3'
+
+vars:
+  APP_NAME: pastewin
+  BIN_DIR: bin
+  PACKAGE_MANAGER: npm
+  VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
+
+includes:
+  common: ./build/Taskfile.yml
+  windows: ./build/windows/Taskfile.yml
+
+tasks:
+  build:
+    summary: Build the Windows application
+    cmds:
+      - task: windows:build
+  dev:
+    summary: Run the Windows application with live reload
+    cmds:
+      - wails3 dev -config ./build/config.yml -port {{.VITE_PORT}}
+  run:
+    cmds:
+      - task: windows:run
+  test:
+    cmds:
+      - go test ./...

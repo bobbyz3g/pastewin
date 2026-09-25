@@ -1,0 +1,15 @@
+.task/
+.work/
+bin/
+frontend/dist/
+frontend/node_modules/
+*.syso
+*.db
+*.db-shm
+*.db-wal
+build/linux/appimage/build/
+build/windows/nsis/MicrosoftEdgeWebview2Setup.exe
+build/ios/xcode/overlay.json
+build/ios/xcode/gen/
+build/android/overlay.json
+build/android/gen/

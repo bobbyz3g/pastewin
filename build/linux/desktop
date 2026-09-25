@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=PasteWin
+Comment=Local clipboard history for Windows
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/pastewin.exe %u
+Terminal=false
+Type=Application
+Icon=pastewin.exe
+Categories=Utility;
+StartupWMClass=pastewin.exe
