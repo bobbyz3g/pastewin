@@ -13,6 +13,35 @@ Windows 本地文本剪贴板原型，使用 **Wails v3.0.0-beta.25 + Go + React
 
 关闭面板会保留托盘和后台监听。在设置或托盘菜单中选择“退出”才会结束进程。初次直接启动时没有确定的粘贴目标，请使用“复制”，或者从目标应用按快捷键重新打开面板。
 
+## 安装包
+
+双击 `bin\pastewin-0.1.0-amd64-setup.exe` 运行中文安装向导：
+
+- 选择安装目录，默认 `%LOCALAPPDATA%\Programs\PasteWin`，仅为当前用户安装。
+- 分别选择是否创建桌面、开始菜单快捷方式。
+- 再次安装自动读取旧安装位置及快捷方式选择。同目录升级替换旧 EXE；更换目录后删除已登记旧目录中的 EXE 和卸载程序。
+- 如果旧程序仍在运行，会提示从托盘退出后重试。不会强行结束进程。
+- 可从 Windows“已安装的应用”或安装目录中的 `uninstall-pastewin.exe` 卸载。升级和卸载均保留 `%APPDATA%\PasteWin\history.db`，不递归删除安装目录内的其他文件。
+- 缺少 WebView2 时会运行微软引导安装程序，需要网络连接。
+
+此前直接拷贝到其他目录的便携版 EXE 没有安装登记，安装程序不会扫描磁盘删除它；选择其所在目录安装可以替换该 EXE。
+
+构建安装包需要 [NSIS 3](https://nsis.sourceforge.io/Download)。安装 NSIS 并加入 PATH，或指定编译器路径：
+
+```powershell
+wails3 task package
+# 自定义 NSIS 路径
+powershell -NoProfile -File build/windows/package.ps1 -NsisPath 'C:\Tools\NSIS\makensis.exe'
+# ARM64（需在相应设备上验证运行）
+wails3 task package ARCH=arm64
+# 安装、升级、锁定文件、快捷方式和卸载回归：使用隔离目录及随机注册表标识
+powershell -NoProfile -File build/windows/test-installer.ps1 -NsisPath 'C:\Tools\NSIS\makensis.exe'
+```
+
+打包会先在 `.work/package-<arch>` 生产构建，再输出 `bin/pastewin-<version>-<arch>-setup.exe`，不覆盖运行中的 `bin/pastewin.exe`。版本号取自 `build/windows/info.json`；发布时同时更新 `build/config.yml` 及该文件中的版本信息。安装逻辑位于 `build/windows/nsis/project.nsi`，不要用模板生成命令覆盖定制内容。
+
+静默安装支持 `/S /DESKTOP=0 /STARTMENU=1 /D=C:\目标目录`；快捷方式开关取值为 `0` 或 `1`。`/D=` 必须是最后一个参数，路径不要加引号，即使包含空格。省略开关时保留上次选择，首次安装默认勾选。静默安装遇到文件占用会返回非零退出码。
+
 ## 界面
 
 默认使用 360 × 680 的紧凑浮动面板（最小 320 × 420）。顶部搜索与全部 / 收藏分类，单列卡片展示历史；底部提供查看全文、收藏、删除、复制、粘贴和暂停。拖动左上角图标可移动窗口，双击记录直接粘贴。全文和设置均在弹窗中显示。
@@ -78,7 +107,7 @@ npm run dev
 - 自动粘贴受 Windows 焦点策略和权限级别约束。普通权限不能保证向管理员应用注入输入，特殊编辑器也可能不接受模拟 Ctrl+V。
 - 隐藏窗口会保留 WebView，以便快速唤起；这不是最低内存方案。应统计主进程和所有关联 WebView2 进程，而非只看 Go 进程。
 - Wails v3 仍为 Beta。本项目固定 Go 模块版本和 npm lockfile；升级框架后需重新验证托盘、热键、焦点和窗口生命周期。
-- 当前产物是未签名的本地开发 EXE，尚未制作安装包。
+- EXE 与安装包目前均未进行代码签名。
 
 ## 验证
 

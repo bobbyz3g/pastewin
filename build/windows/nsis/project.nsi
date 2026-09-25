@@ -1,119 +1,296 @@
 Unicode true
+!include "MUI2.nsh"
+!include "LogicLib.nsh"
+!include "FileFunc.nsh"
+!include "x64.nsh"
+!include "WinVer.nsh"
+!include "nsDialogs.nsh"
 
-####
-## Please note: Template replacements don't work in this file. They are provided with default defines like
-## mentioned underneath.
-## If the keyword is not defined, "wails_tools.nsh" will populate them.
-## If they are defined here, "wails_tools.nsh" will not touch them. This allows you to use this project.nsi manually
-## from outside of Wails for debugging and development of the installer.
-##
-## For development first make a wails nsis build to populate the "wails_tools.nsh":
-## > wails build --target windows/amd64 --nsis
-## Then you can call makensis on this file with specifying the path to your binary:
-## For a AMD64 only installer:
-## > makensis -DARG_WAILS_AMD64_BINARY=..\..\bin\app.exe
-## For a ARM64 only installer:
-## > makensis -DARG_WAILS_ARM64_BINARY=..\..\bin\app.exe
-## For a installer with both architectures:
-## > makensis -DARG_WAILS_AMD64_BINARY=..\..\bin\app-amd64.exe -DARG_WAILS_ARM64_BINARY=..\..\bin\app-arm64.exe
-####
-## The following information is taken from the wails_tools.nsh file, but they can be overwritten here.
-####
-## !define INFO_PROJECTNAME    "my-project" # Default "pastewin"
-## !define INFO_COMPANYNAME    "My Company" # Default "My Company"
-## !define INFO_PRODUCTNAME    "My Product Name" # Default "PasteWin"
-## !define INFO_PRODUCTVERSION "1.0.0"     # Default "0.1.0"
-## !define INFO_COPYRIGHT      "(c) Now, My Company" # Default "© 2026, My Company"
-###
-## !define PRODUCT_EXECUTABLE  "Application.exe"      # Default "${INFO_PROJECTNAME}.exe"
-## !define UNINST_KEY_NAME     "UninstKeyInRegistry"  # Default "${INFO_COMPANYNAME}${INFO_PRODUCTNAME}"
-####
-## !define REQUEST_EXECUTION_LEVEL "admin"            # Default "admin"  see also https://nsis.sourceforge.io/Docs/Chapter4.html
-## !define WAILS_INSTALL_SCOPE     "user"             # Default "machine" - set to "user" for per-user install ($LOCALAPPDATA) without UAC prompt
-####
-## Include the wails tools
-####
-!include "wails_tools.nsh"
+!ifndef APP_ID
+!define APP_ID "dev.pastewin.app"
+!endif
+!ifndef APP_NAME
+!define APP_NAME "PasteWin"
+!endif
+!define EXE "pastewin.exe"
+!define UNINSTALLER "uninstall-pastewin.exe"
+!define KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}"
+!ifndef VERSION
+!define VERSION "0.1.0"
+!endif
+!ifndef ARCH
+!define ARCH "amd64"
+!endif
+!ifndef BINARY
+!error "BINARY must point to the production executable"
+!endif
+!ifndef OUTPUT
+!error "OUTPUT must specify the installer path"
+!endif
 
-# The version information for this two must consist of 4 parts
-VIProductVersion "${INFO_PRODUCTVERSION}.0"
-VIFileVersion    "${INFO_PRODUCTVERSION}.0"
-
-VIAddVersionKey "CompanyName"     "${INFO_COMPANYNAME}"
-VIAddVersionKey "FileDescription" "${INFO_PRODUCTNAME} Installer"
-VIAddVersionKey "ProductVersion"  "${INFO_PRODUCTVERSION}"
-VIAddVersionKey "FileVersion"     "${INFO_PRODUCTVERSION}"
-VIAddVersionKey "LegalCopyright"  "${INFO_COPYRIGHT}"
-VIAddVersionKey "ProductName"     "${INFO_PRODUCTNAME}"
-
-# Enable HiDPI support. https://nsis.sourceforge.io/Reference/ManifestDPIAware
+Name "${APP_NAME}"
+OutFile "${OUTPUT}"
+InstallDir ""
+RequestExecutionLevel user
 ManifestDPIAware true
-
-!include "MUI.nsh"
-
+SetCompressor /SOLID lzma
+VIProductVersion "${VERSION}.0"
+VIAddVersionKey "ProductName" "${APP_NAME}"
+VIAddVersionKey "FileDescription" "${APP_NAME} Installer"
+VIAddVersionKey "FileVersion" "${VERSION}"
+VIAddVersionKey "LegalCopyright" "Copyright 2026 PasteWin"
 !define MUI_ICON "..\icon.ico"
 !define MUI_UNICON "..\icon.ico"
-# !define MUI_WELCOMEFINISHPAGE_BITMAP "resources\leftimage.bmp" #Include this to add a bitmap on the left side of the Welcome Page. Must be a size of 164x314
-!define MUI_FINISHPAGE_NOAUTOCLOSE # Wait on the INSTFILES page so the user can take a look into the details of the installation steps
-!define MUI_ABORTWARNING # This will warn the user if they exit from the installer.
+!define MUI_ABORTWARNING
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_DIRECTORY
+Page custom ShortcutPage ShortcutLeave
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_LANGUAGE "SimpChinese"
 
-!insertmacro MUI_PAGE_WELCOME # Welcome to the installer page.
-# !insertmacro MUI_PAGE_LICENSE "resources\eula.txt" # Adds a EULA page to the installer
-!insertmacro MUI_PAGE_DIRECTORY # In which folder install page.
-!insertmacro MUI_PAGE_INSTFILES # Installing page.
-!insertmacro MUI_PAGE_FINISH # Finished installation page.
+Var OldDir
+Var DesktopChoice
+Var MenuChoice
+Var DesktopBox
+Var MenuBox
+Var OldRenamed
+Var InstallMutex
 
-!insertmacro MUI_UNPAGE_INSTFILES # Uninstalling page
-
-!insertmacro MUI_LANGUAGE "English" # Set the Language of the installer
-
-## The following two statements can be used to sign the installer and the uninstaller. The path to the binaries are provided in %1
-#!uninstfinalize 'signtool --file "%1"'
-#!finalize 'signtool --file "%1"'
-
-Name "${INFO_PRODUCTNAME}"
-OutFile "..\..\..\bin\${INFO_PROJECTNAME}-${ARCH}-installer.exe" # Name of the installer's file.
-!if "${WAILS_INSTALL_SCOPE}" == "user"
-    InstallDir "$LOCALAPPDATA\Programs\${INFO_PRODUCTNAME}"
-!else
-    InstallDir "$PROGRAMFILES64\${INFO_COMPANYNAME}\${INFO_PRODUCTNAME}"
-!endif
-ShowInstDetails show # This will always show the installation details.
+; One installer/uninstaller at a time, including during directory migration.
+!macro InitShared
+  SetShellVarContext current
+  SetRegView 64
+  System::Call 'kernel32::CreateMutexW(p 0, i 0, w "Local\${APP_ID}.installer") p .r0 ?e'
+  Pop $1
+  StrCpy $InstallMutex $0
+  ${If} $1 = 183
+    MessageBox MB_OK|MB_ICONEXCLAMATION "另一个安装或卸载程序正在运行。" /SD IDOK
+    SetErrorLevel 1618
+    Quit
+  ${EndIf}
+!macroend
 
 Function .onInit
-   !insertmacro wails.checkArchitecture
+  !insertmacro InitShared
+  ${IfNot} ${AtLeastWin10}
+    MessageBox MB_OK|MB_ICONSTOP "需要 Windows 10 或更新版本。" /SD IDOK
+    SetErrorLevel 1633
+    Quit
+  ${EndIf}
+!if "${ARCH}" == "amd64"
+  ${IfNot} ${IsNativeAMD64}
+!else if "${ARCH}" == "arm64"
+  ${IfNot} ${IsNativeARM64}
+!else
+  !error "Unsupported ARCH"
+!endif
+    MessageBox MB_OK|MB_ICONSTOP "请选择与系统架构匹配的安装包（${ARCH}）。" /SD IDOK
+    SetErrorLevel 1633
+    Quit
+  ${EndIf}
+  ReadRegStr $OldDir HKCU "${KEY}" "InstallLocation"
+  ; NSIS has already populated INSTDIR when /D was supplied.
+  ${If} $INSTDIR == ""
+    ${If} $OldDir != ""
+      StrCpy $INSTDIR $OldDir
+    ${Else}
+      StrCpy $INSTDIR "$LOCALAPPDATA\Programs\${APP_NAME}"
+    ${EndIf}
+  ${EndIf}
+  StrCpy $DesktopChoice ${BST_CHECKED}
+  StrCpy $MenuChoice ${BST_CHECKED}
+  ; Remember choices on upgrade. CLI switches override them for deployment.
+  ClearErrors
+  ReadRegDWORD $0 HKCU "${KEY}" "DesktopShortcut"
+  ${IfNot} ${Errors}
+    StrCpy $DesktopChoice $0
+  ${EndIf}
+  ClearErrors
+  ReadRegDWORD $0 HKCU "${KEY}" "StartMenuShortcut"
+  ${IfNot} ${Errors}
+    StrCpy $MenuChoice $0
+  ${EndIf}
+  ${GetParameters} $0
+  ClearErrors
+  ${GetOptions} $0 "/DESKTOP=" $1
+  ${IfNot} ${Errors}
+    StrCpy $DesktopChoice $1
+  ${EndIf}
+  ClearErrors
+  ${GetOptions} $0 "/STARTMENU=" $1
+  ${IfNot} ${Errors}
+    StrCpy $MenuChoice $1
+  ${EndIf}
 FunctionEnd
 
-Section
-    !insertmacro wails.setShellContext
+Function ShortcutPage
+  !insertmacro MUI_HEADER_TEXT "快捷方式" "选择需要创建的快捷方式。"
+  nsDialogs::Create 1018
+  Pop $0
+  ${NSD_CreateLabel} 0 0 100% 28u "仅为当前 Windows 用户安装。升级会替换旧版程序，保留剪贴板历史。"
+  Pop $0
+  ${NSD_CreateCheckbox} 0 40u 100% 14u "创建桌面快捷方式"
+  Pop $DesktopBox
+  ${NSD_SetState} $DesktopBox $DesktopChoice
+  ${NSD_CreateCheckbox} 0 64u 100% 14u "创建开始菜单快捷方式"
+  Pop $MenuBox
+  ${NSD_SetState} $MenuBox $MenuChoice
+  nsDialogs::Show
+FunctionEnd
 
-    !insertmacro wails.webview2runtime
+Function ShortcutLeave
+  ${NSD_GetState} $DesktopBox $DesktopChoice
+  ${NSD_GetState} $MenuBox $MenuChoice
+FunctionEnd
 
-    SetOutPath $INSTDIR
+; Rename alone can succeed for a running image. Test write access first so an
+; upgrade cannot strand a still-running old version under another filename.
+!macro CheckWritable PATH PREFIX
+  ${If} ${FileExists} "${PATH}"
+    ${Do}
+      System::Call 'kernel32::CreateFileW(w "${PATH}", i 0x40000000, i 0, p 0, i 3, i 0, p 0) p .r0'
+      ${If} $0 != -1
+        System::Call 'kernel32::CloseHandle(p r0)'
+        ${ExitDo}
+      ${EndIf}
+      MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "无法替换程序文件：$\r$\n${PATH}$\r$\n请从托盘菜单退出 PasteWin 后重试，并确认目录可写。" /SD IDCANCEL IDRETRY ${PREFIX}retry
+      SetErrorLevel 5
+      Quit
+      ${PREFIX}retry:
+    ${Loop}
+  ${EndIf}
+!macroend
 
-    !insertmacro wails.files
+Function EnsureWebView
+  ReadRegStr $0 HKLM "Software\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  ${If} $0 != ""
+  ${AndIf} $0 != "0.0.0.0"
+    Return
+  ${EndIf}
+  ReadRegStr $0 HKCU "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  ${If} $0 != ""
+  ${AndIf} $0 != "0.0.0.0"
+    Return
+  ${EndIf}
+  DetailPrint "正在安装 Microsoft WebView2 Runtime（需要联网）…"
+  SetOutPath "$PLUGINSDIR"
+  File "MicrosoftEdgeWebview2Setup.exe"
+  ExecWait '"$PLUGINSDIR\MicrosoftEdgeWebview2Setup.exe" /silent /install' $0
+  ${If} $0 != 0
+  ${AndIf} $0 != 3010
+    MessageBox MB_OK|MB_ICONSTOP "WebView2 安装失败（$0）。请联网安装 Microsoft WebView2 Runtime 后重试。" /SD IDOK
+    SetErrorLevel 1603
+    Quit
+  ${EndIf}
+FunctionEnd
 
-    CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
-    CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
-
-    !insertmacro wails.associateFiles
-    !insertmacro wails.associateCustomProtocols
-
-    !insertmacro wails.writeUninstaller
+Section "安装"
+  InitPluginsDir
+  Call EnsureWebView
+  !insertmacro CheckWritable "$INSTDIR\${EXE}" target
+  ${If} $OldDir != ""
+  ${AndIf} $OldDir != $INSTDIR
+    !insertmacro CheckWritable "$OldDir\${EXE}" source
+    ; Never overwrite an unrelated executable at the new destination.
+    ${If} ${FileExists} "$INSTDIR\${EXE}"
+      MessageBox MB_OK|MB_ICONSTOP "目标目录已有 pastewin.exe。请选择空目录或原安装目录。" /SD IDOK
+      SetErrorLevel 80
+      Quit
+    ${EndIf}
+  ${EndIf}
+  ${If} $OldDir == ""
+    StrCpy $OldDir $INSTDIR
+  ${EndIf}
+  ${If} ${FileExists} "$OldDir\pastewin.previous.exe"
+    MessageBox MB_OK|MB_ICONSTOP "旧目录存在 pastewin.previous.exe 备份。请先恢复或移走它，然后重试。" /SD IDOK
+    SetErrorLevel 80
+    Quit
+  ${EndIf}
+  SetOutPath "$PLUGINSDIR\payload"
+  File /oname=pastewin.exe "${BINARY}"
+  ClearErrors
+  CreateDirectory "$INSTDIR"
+  WriteUninstaller "$INSTDIR\${UNINSTALLER}"
+  ${If} ${Errors}
+    MessageBox MB_OK|MB_ICONSTOP "无法写入安装目录，请选择当前用户可写的目录。" /SD IDOK
+    SetErrorLevel 5
+    Quit
+  ${EndIf}
+  StrCpy $OldRenamed 0
+  ${If} ${FileExists} "$OldDir\${EXE}"
+    ClearErrors
+    Rename "$OldDir\${EXE}" "$OldDir\pastewin.previous.exe"
+    ${If} ${Errors}
+      MessageBox MB_OK|MB_ICONSTOP "无法替换旧版程序，请退出 PasteWin 后重试。" /SD IDOK
+      SetErrorLevel 5
+      Quit
+    ${EndIf}
+    StrCpy $OldRenamed 1
+  ${EndIf}
+  ClearErrors
+  CopyFiles /SILENT "$PLUGINSDIR\payload\${EXE}" "$INSTDIR\${EXE}"
+  ${If} ${Errors}
+    Delete "$INSTDIR\${EXE}"
+    ${If} $OldRenamed = 1
+      Rename "$OldDir\pastewin.previous.exe" "$OldDir\${EXE}"
+    ${EndIf}
+    MessageBox MB_OK|MB_ICONSTOP "安装失败，已尝试恢复旧版程序。请检查磁盘空间和目录权限。" /SD IDOK
+    SetErrorLevel 1603
+    Quit
+  ${EndIf}
+  Delete "$OldDir\pastewin.previous.exe"
+  ${If} $OldDir != $INSTDIR
+    Delete "$OldDir\${UNINSTALLER}"
+    ; Only remove an empty directory: never recursively delete user files.
+    RMDir "$OldDir"
+  ${EndIf}
+  SetOutPath "$INSTDIR"
+  Delete "$DESKTOP\${APP_NAME}.lnk"
+  Delete "$SMPROGRAMS\${APP_NAME}.lnk"
+  ${If} $DesktopChoice = ${BST_CHECKED}
+    CreateShortcut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${EXE}"
+  ${EndIf}
+  ${If} $MenuChoice = ${BST_CHECKED}
+    CreateShortcut "$SMPROGRAMS\${APP_NAME}.lnk" "$INSTDIR\${EXE}"
+  ${EndIf}
+  WriteRegStr HKCU "${KEY}" "DisplayName" "${APP_NAME}"
+  WriteRegStr HKCU "${KEY}" "DisplayVersion" "${VERSION}"
+  WriteRegStr HKCU "${KEY}" "Publisher" "PasteWin"
+  WriteRegStr HKCU "${KEY}" "InstallLocation" "$INSTDIR"
+  WriteRegStr HKCU "${KEY}" "DisplayIcon" "$INSTDIR\${EXE}"
+  WriteRegStr HKCU "${KEY}" "UninstallString" '$\"$INSTDIR\${UNINSTALLER}$\"'
+  WriteRegStr HKCU "${KEY}" "QuietUninstallString" '$\"$INSTDIR\${UNINSTALLER}$\" /S'
+  WriteRegDWORD HKCU "${KEY}" "NoModify" 1
+  WriteRegDWORD HKCU "${KEY}" "NoRepair" 1
+  WriteRegDWORD HKCU "${KEY}" "DesktopShortcut" $DesktopChoice
+  WriteRegDWORD HKCU "${KEY}" "StartMenuShortcut" $MenuChoice
+  ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+  WriteRegDWORD HKCU "${KEY}" "EstimatedSize" $0
 SectionEnd
 
-Section "uninstall"
-    !insertmacro wails.setShellContext
+Function un.onInit
+  !insertmacro InitShared
+FunctionEnd
 
-    RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
-
-    RMDir /r $INSTDIR
-
-    Delete "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk"
-    Delete "$DESKTOP\${INFO_PRODUCTNAME}.lnk"
-
-    !insertmacro wails.unassociateFiles
-    !insertmacro wails.unassociateCustomProtocols
-
-    !insertmacro wails.deleteUninstaller
+Section "Uninstall"
+  !insertmacro CheckWritable "$INSTDIR\${EXE}" uninstall
+  ClearErrors
+  Delete "$INSTDIR\${EXE}"
+  ${If} ${Errors}
+    SetErrorLevel 5
+    Quit
+  ${EndIf}
+  ; A copied stale uninstaller must not unregister a newer installation.
+  ReadRegStr $0 HKCU "${KEY}" "InstallLocation"
+  ${If} $0 == $INSTDIR
+    Delete "$DESKTOP\${APP_NAME}.lnk"
+    Delete "$SMPROGRAMS\${APP_NAME}.lnk"
+    DeleteRegKey HKCU "${KEY}"
+  ${EndIf}
+  Delete "$INSTDIR\${UNINSTALLER}"
+  RMDir "$INSTDIR"
+  ; APPDATA\PasteWin and WebView profile are intentionally preserved.
 SectionEnd

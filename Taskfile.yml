@@ -15,6 +15,10 @@ tasks:
     summary: Build the Windows application
     cmds:
       - task: windows:build
+  package:
+    summary: Build the Windows installer
+    cmds:
+      - task: windows:create:nsis:installer
   dev:
     summary: Run the Windows application with live reload
     cmds:
