@@ -30,7 +30,7 @@ Windows 本地文本剪贴板原型，使用 **Wails v3.0.0-beta.25 + Go + React
 
 ## 本地开发
 
-环境：Windows 10/11、Go 1.25+、Node.js 22.12+（或兼容的较新 LTS）、WebView2。
+环境：Windows 10/11、Go 1.27.0+、Node.js 22.12+（或兼容的较新 LTS）、WebView2。
 
 ```powershell
 cd C:\Users\zhang\Developer\projects\pastewin

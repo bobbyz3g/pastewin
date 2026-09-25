@@ -53,7 +53,7 @@
 
 ## 开发与验证
 
-环境：Windows 10/11、Go 1.25+、Node.js 22.12+ 或兼容版本、WebView2。CLI 与项目 Wails 版本保持一致：
+环境：Windows 10/11、Go 1.27.0+、Node.js 22.12+ 或兼容版本、WebView2。CLI 与项目 Wails 版本保持一致：
 
 ```powershell
 go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
