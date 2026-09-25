@@ -454,6 +454,36 @@ dialog::backdrop {
   margin-top: 8px;
   color: #888191;
 }
+.about-section {
+  padding: 0 0 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.about-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+.about-heading h3 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+.app-version {
+  font-size: 10px;
+  color: #716b80;
+  font-variant-numeric: tabular-nums;
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+.about-section p {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #716b80;
+}
 .dialog-footer {
   display: flex;
   flex-wrap: wrap;

@@ -25,6 +25,7 @@ import {
   type Page,
   type Status,
 } from "./api";
+import buildInfo from "../../build/windows/info.json";
 import "./style.css";
 
 const empty: Page = { entries: [], total: 0, all: 0, pinned: 0 };
@@ -543,6 +544,16 @@ export default function App() {
             <code>{status?.databasePath}</code>
           </div>
         </div>
+        <section className="about-section" aria-labelledby="about-title">
+          <div className="about-heading">
+            <h3 id="about-title">关于 PasteWin</h3>
+            <span className="app-version">
+              版本 {buildInfo.fixed.file_version}
+            </span>
+          </div>
+          <p>Windows 本地剪贴板工具</p>
+          <p>记录、搜索和收藏复制过的文本，快速粘贴回原应用。</p>
+        </section>
         <div className="dialog-footer">
           {confirmClear ? (
             <>

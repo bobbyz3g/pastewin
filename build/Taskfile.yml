@@ -81,6 +81,7 @@ tasks:
     dir: frontend
     sources:
       - "**/*"
+      - ../build/windows/info.json
       - exclude: node_modules/**/*
     generates:
       - dist/**/*
