@@ -16,7 +16,43 @@ let entries: Entry[] = [
   createdAt: now - i * 170000,
   updatedAt: now - i * 170000,
   pinned: i === 0 || i === 2,
+  hasImage: false,
+  imageWidth: 0,
+  imageHeight: 0,
+  imageBytes: 0,
 }));
+const canvas = document.createElement("canvas");
+canvas.width = 640;
+canvas.height = 360;
+const context = canvas.getContext("2d")!;
+context.fillStyle = "#337fc4";
+context.fillRect(40, 40, 400, 220);
+context.fillStyle = "#a885cc99";
+context.beginPath();
+context.arc(460, 200, 110, 0, Math.PI * 2);
+context.fill();
+context.fillStyle = "white";
+context.font = "32px sans-serif";
+context.fillText("PasteWin 图片预览", 65, 150);
+const sampleImage = canvas.toDataURL("image/png");
+entries.unshift(
+  ...["", "这条记录同时包含文字和图片，默认复制文字。"].map(
+    (text, i): Entry => ({
+      id: 7 + i,
+      text,
+      preview: text,
+      characters: text.length,
+      createdAt: now,
+      updatedAt: now,
+      pinned: false,
+      hasImage: true,
+      imageWidth: 640,
+      imageHeight: 360,
+      imageBytes: 8192,
+      previewImage: sampleImage,
+    }),
+  ),
+);
 let paused = false;
 let autoStart = false;
 const changed = () => window.dispatchEvent(new CustomEvent("history:changed"));
@@ -52,12 +88,16 @@ export const demo = {
     changed();
   },
   async Copy() {},
+  async CopyImage() {},
   async Paste() {
     throw Error("浏览器预览不执行系统粘贴");
   },
   async SetPaused(value: boolean) {
     paused = value;
     window.dispatchEvent(new CustomEvent("status:changed"));
+  },
+  async PasteImage() {
+    throw Error("浏览器预览不执行系统粘贴");
   },
   async Status(): Promise<Status> {
     return {

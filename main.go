@@ -24,7 +24,7 @@ func main() {
 	app := application.New(application.Options{
 		Name: "PasteWin", Description: "本地剪贴板工作台", Icon: trayIcon(),
 		Services: []application.Service{application.NewService(service)},
-		Assets:   application.AssetOptions{Handler: application.AssetFileServerFS(assets)},
+		Assets:   application.AssetOptions{Handler: application.AssetFileServerFS(assets), Middleware: service.imageAssets},
 		SingleInstance: &application.SingleInstanceOptions{UniqueID: "dev.pastewin.app", OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
 			if service.window != nil && !slices.Contains(data.Args, startup.Argument) {
 				service.show()

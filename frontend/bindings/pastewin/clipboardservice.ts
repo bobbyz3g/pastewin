@@ -25,6 +25,10 @@ export function Copy(id: number): $CancellablePromise<void> {
     return $Call.ByID(692527914, id);
 }
 
+export function CopyImage(id: number): $CancellablePromise<void> {
+    return $Call.ByID(2065522335, id);
+}
+
 export function Delete(id: number): $CancellablePromise<void> {
     return $Call.ByID(3388738656, id);
 }
@@ -43,6 +47,10 @@ export function List(query: string, pinned: boolean, offset: number): $Cancellab
 
 export function Paste(id: number): $CancellablePromise<void> {
     return $Call.ByID(2736499246, id);
+}
+
+export function PasteImage(id: number): $CancellablePromise<void> {
+    return $Call.ByID(1492440867, id);
 }
 
 export function Pin(id: number, pinned: boolean): $CancellablePromise<void> {

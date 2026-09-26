@@ -5,8 +5,10 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
+	"pastewin/internal/clipimage"
 	"pastewin/internal/history"
 	"pastewin/internal/native"
 	"pastewin/internal/startup"
@@ -38,6 +40,9 @@ type ClipboardService struct {
 	hotkeyError    string
 	databasePath   string
 	pasting        bool
+	captureEpoch   uint64
+	lastCaptured   uint32
+	captures       chan captureJob
 }
 
 func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
@@ -67,7 +72,9 @@ func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.Ser
 		return err
 	}
 	s.monitor = m
-	s.wg.Add(1)
+	s.captures = make(chan captureJob, 1)
+	s.wg.Add(2)
+	go s.processCaptures()
 	go func() {
 		defer s.wg.Done()
 		for {
@@ -89,32 +96,16 @@ func (s *ClipboardService) ServiceShutdown() error {
 	return s.store.Close()
 }
 
-func (s *ClipboardService) capture() {
-	s.opMu.Lock()
-	defer s.opMu.Unlock()
-	if s.paused {
-		return
+func (s *ClipboardService) changed() {
+	if s.app != nil {
+		s.app.Event.Emit("history:changed")
 	}
-	seq := native.Sequence()
-	if seq == s.ignoreSequence {
-		return
-	}
-	text, err := s.monitor.ReadText()
-	if err != nil {
-		s.report(err)
-		return
-	}
-	if text == "" {
-		return
-	}
-	if err = s.store.Add(text); err != nil {
-		s.report(err)
-		return
-	}
-	s.changed()
 }
-func (s *ClipboardService) changed()         { s.app.Event.Emit("history:changed") }
-func (s *ClipboardService) report(err error) { s.app.Event.Emit("app:error", err.Error()) }
+func (s *ClipboardService) report(err error) {
+	if s.app != nil {
+		s.app.Event.Emit("app:error", err.Error())
+	}
+}
 
 func (s *ClipboardService) List(query string, pinned bool, offset int) (history.Page, error) {
 	return s.store.List(query, pinned, offset)
@@ -135,9 +126,12 @@ func (s *ClipboardService) Delete(id int64) error {
 	return nil
 }
 func (s *ClipboardService) ClearUnpinned() error {
+	s.opMu.Lock()
+	defer s.opMu.Unlock()
 	if err := s.store.ClearUnpinned(); err != nil {
 		return err
 	}
+	s.captureEpoch++
 	s.changed()
 	return nil
 }
@@ -149,9 +143,12 @@ func (s *ClipboardService) SetPaused(paused bool) error {
 		return err
 	}
 	s.paused = paused
+	s.captureEpoch++
 	// Resuming must not capture data copied during a paused interval.
 	s.ignoreSequence = native.Sequence()
-	s.app.Event.Emit("status:changed")
+	if s.app != nil {
+		s.app.Event.Emit("status:changed")
+	}
 	return nil
 }
 
@@ -173,19 +170,52 @@ func (s *ClipboardService) Status() Status {
 	return Status{paused, "Ctrl+Shift+V", s.hotkeyError, s.databasePath, native.ExternalWindow(s.target)}
 }
 func (s *ClipboardService) Copy(id int64) error {
+	return s.copyContent(id, false)
+}
+func (s *ClipboardService) CopyImage(id int64) error {
+	return s.copyContent(id, true)
+}
+func (s *ClipboardService) copyContent(id int64, imageOnly bool) error {
 	e, err := s.store.Get(id)
 	if err != nil {
 		return err
 	}
+	useImage := imageOnly || (e.HasImage && strings.TrimSpace(e.Text) == "")
+	var pngData, dib []byte
+	if useImage {
+		pngData, err = s.store.Image(id, false)
+		if err != nil {
+			return err
+		}
+		pixels, decodeErr := clipimage.DecodePNG(pngData)
+		if decodeErr != nil {
+			return decodeErr
+		}
+		dib, err = clipimage.EncodeDIBV5(pixels)
+		if err != nil {
+			return err
+		}
+	}
 	s.opMu.Lock()
 	defer s.opMu.Unlock()
-	seq, err := s.monitor.WriteText(e.Text)
-	if err == nil {
+	var seq uint32
+	if useImage {
+		seq, err = s.monitor.WriteImage(pngData, dib)
+	} else {
+		seq, err = s.monitor.WriteText(e.Text)
+	}
+	if seq != 0 {
 		s.ignoreSequence = seq
 	}
 	return err
 }
 func (s *ClipboardService) Paste(id int64) error {
+	return s.pasteContent(id, false)
+}
+func (s *ClipboardService) PasteImage(id int64) error {
+	return s.pasteContent(id, true)
+}
+func (s *ClipboardService) pasteContent(id int64, imageOnly bool) error {
 	s.stateMu.Lock()
 	if s.pasting {
 		s.stateMu.Unlock()
@@ -199,7 +229,7 @@ func (s *ClipboardService) Paste(id int64) error {
 	s.pasting = true
 	s.stateMu.Unlock()
 	defer func() { s.stateMu.Lock(); s.pasting = false; s.stateMu.Unlock() }()
-	if err := s.Copy(id); err != nil {
+	if err := s.copyContent(id, imageOnly); err != nil {
 		return err
 	}
 	s.window.Hide()

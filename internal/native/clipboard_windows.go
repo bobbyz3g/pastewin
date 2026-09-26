@@ -4,12 +4,15 @@ package native
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"runtime"
 	"syscall"
 	"time"
 	"unsafe"
+
+	"pastewin/internal/clipimage"
 
 	"golang.org/x/sys/windows"
 )
@@ -148,16 +151,27 @@ func format(name string) uintptr {
 }
 func available(f uintptr) bool { r, _, _ := hasFormat.Call(f); return r != 0 }
 
-func (m *Monitor) ReadText() (string, error) {
+type Snapshot struct {
+	Sequence uint32
+	Text     string
+	Images   []clipimage.Encoded
+	Warning  error
+}
+
+// ReadSnapshot copies bounded representations while holding the clipboard. No
+// image decoding or encoding occurs until after CloseClipboard.
+func (m *Monitor) ReadSnapshot() (Snapshot, error) {
+	var result Snapshot
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	if err := open(m.handle); err != nil {
-		return "", err
+		return result, err
 	}
 	defer closeClipboard.Call()
+	result.Sequence = Sequence()
 	// Respect Windows' explicit clipboard-history opt-out formats.
 	if available(format("ExcludeClipboardContentFromMonitorProcessing")) {
-		return "", nil
+		return result, nil
 	}
 	if f := format("CanIncludeInClipboardHistory"); available(f) {
 		h, _, _ := getClipboardData.Call(f)
@@ -171,10 +185,54 @@ func (m *Monitor) ReadText() (string, error) {
 			excluded := size >= 4 && flag == 0
 			globalUnlock.Call(h)
 			if excluded {
-				return "", nil
+				return result, nil
 			}
 		}
 	}
+	result.Text, result.Warning = readText()
+	var imageErr error
+	remaining := clipimage.MaxRawBytes
+	for _, f := range []struct {
+		id   uintptr
+		name string
+	}{{format("PNG"), "PNG"}, {17, "DIB"}, {8, "DIB"}} {
+		if f.id == 0 || !available(f.id) {
+			continue
+		}
+		data, err := readBytes(f.id, remaining)
+		if err != nil {
+			imageErr = err
+			continue
+		}
+		remaining -= len(data)
+		result.Images = append(result.Images, clipimage.Encoded{Format: f.name, Data: data})
+	}
+	if len(result.Images) == 0 {
+		result.Warning = errors.Join(result.Warning, imageErr)
+	}
+	return result, nil
+}
+
+func readBytes(f uintptr, limit int) ([]byte, error) {
+	h, _, err := getClipboardData.Call(f)
+	if h == 0 {
+		return nil, fmt.Errorf("读取图片剪贴板：%w", err)
+	}
+	size, _, _ := globalSize.Call(h)
+	if size == 0 || size > uintptr(limit) {
+		return nil, errors.New("图片剪贴板数据过大或为空，未读取该格式")
+	}
+	p, _, err := globalLock.Call(h)
+	if p == 0 {
+		return nil, fmt.Errorf("锁定图片剪贴板：%w", err)
+	}
+	defer globalUnlock.Call(h)
+	data := make([]byte, int(size))
+	copyMemory.Call(uintptr(unsafe.Pointer(&data[0])), p, size)
+	return data, nil
+}
+
+func readText() (string, error) {
 	if !available(13) {
 		return "", nil
 	}
@@ -197,42 +255,94 @@ func (m *Monitor) ReadText() (string, error) {
 	// Copy only the bounded, locked Windows allocation into Go-owned memory.
 	data := make([]uint16, int(size/2))
 	copyMemory.Call(uintptr(unsafe.Pointer(&data[0])), p, uintptr(len(data)*2))
-	return windows.UTF16ToString(data), nil
+	text := windows.UTF16ToString(data)
+	if len(text) > 1<<20 {
+		return "", errors.New("文本超过 1 MiB，未保存")
+	}
+	return text, nil
 }
 
 func (m *Monitor) WriteText(text string) (uint32, error) {
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	data, err := windows.UTF16FromString(text)
 	if err != nil {
 		return 0, err
 	}
-	h, _, err := globalAlloc.Call(0x0042, uintptr(len(data)*2))
-	if h == 0 {
-		return 0, err
+	encoded := make([]byte, len(data)*2)
+	for i, v := range data {
+		binary.LittleEndian.PutUint16(encoded[i*2:], v)
 	}
-	owned := true
+	return m.writeFormats([]clipboardFormat{{13, encoded}})
+}
+
+func (m *Monitor) WriteImage(pngData, dib []byte) (uint32, error) {
+	f := format("PNG")
+	if f == 0 {
+		return 0, errors.New("无法注册 PNG 剪贴板格式")
+	}
+	return m.writeFormats([]clipboardFormat{{f, pngData}, {17, dib}})
+}
+
+type clipboardFormat struct {
+	id   uintptr
+	data []byte
+}
+
+func (m *Monitor) writeFormats(formats []clipboardFormat) (seq uint32, err error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+	handles := make([]uintptr, len(formats))
 	defer func() {
-		if owned {
-			globalFree.Call(h)
+		for _, h := range handles {
+			if h != 0 {
+				globalFree.Call(h)
+			}
 		}
 	}()
-	p, _, err := globalLock.Call(h)
-	if p == 0 {
-		return 0, err
+	// Allocate every representation before emptying the clipboard. A successful
+	// SetClipboardData transfers only that handle's ownership to Windows.
+	for i, f := range formats {
+		if len(f.data) == 0 {
+			return 0, errors.New("剪贴板内容为空")
+		}
+		h, _, e := globalAlloc.Call(0x0042, uintptr(len(f.data)))
+		if h == 0 {
+			return 0, e
+		}
+		handles[i] = h
+		p, _, e := globalLock.Call(h)
+		if p == 0 {
+			return 0, e
+		}
+		copyMemory.Call(p, uintptr(unsafe.Pointer(&f.data[0])), uintptr(len(f.data)))
+		globalUnlock.Call(h)
 	}
-	copyMemory.Call(p, uintptr(unsafe.Pointer(&data[0])), uintptr(len(data)*2))
-	globalUnlock.Call(h)
 	if err := open(m.handle); err != nil {
 		return 0, err
 	}
-	defer closeClipboard.Call()
+	changed := false
+	defer func() {
+		closeClipboard.Call()
+		// Closing a bitmap clipboard can synthesize formats and advance its
+		// sequence again. Record the final sequence only while we still own it.
+		if changed {
+			current := Sequence()
+			owner, _, _ := user32.NewProc("GetClipboardOwner").Call()
+			if owner == m.handle {
+				seq = current
+			}
+		}
+	}()
 	if ok, _, err := emptyClipboard.Call(); ok == 0 {
 		return 0, err
 	}
-	if ok, _, err := setClipboardData.Call(13, h); ok == 0 {
-		return 0, err
+	// Also suppress a partial write: it has already changed the clipboard even
+	// when a later representation fails. Do not send Ctrl+V on that error.
+	changed = true
+	for i, f := range formats {
+		if ok, _, e := setClipboardData.Call(f.id, handles[i]); ok == 0 {
+			return 0, fmt.Errorf("写入剪贴板失败：%w", e)
+		}
+		handles[i] = 0
 	}
-	owned = false
-	return Sequence(), nil
+	return 0, nil
 }

@@ -1,12 +1,12 @@
 # PasteWin
 
-Windows 本地文本剪贴板原型，使用 **Wails v3.0.0-beta.25 + Go + React / TypeScript + SQLite**。
+Windows 本地文字与图片剪贴板工具，使用 **Wails v3.0.0-beta.25 + Go + React / TypeScript + SQLite**。
 
 ## 直接体验
 
 双击 `bin\pastewin.exe`。
 
-1. 在记事本或其他应用复制文本。
+1. 在记事本复制文本，或在截图工具、浏览器、画图等应用复制图片。
 2. 保持光标在需要粘贴的位置，按 **Ctrl + Shift + V**。
 3. 搜索或用 **↑ / ↓** 选择历史，按 **Enter** 粘贴回原窗口。
 4. **Ctrl + Enter** 仅复制，**Esc** 先清空搜索，再次按下隐藏面板。
@@ -15,9 +15,11 @@ Windows 本地文本剪贴板原型，使用 **Wails v3.0.0-beta.25 + Go + React
 
 在设置中打开“开机自启”，登录 Windows 后会自动在托盘后台运行，不弹出面板；默认关闭，可随时关闭。该选项仅作用于当前用户，无需管理员权限。启动项使用当前 EXE 的绝对路径，手动移动便携版后需重新开启。若在 Windows“启动应用”中禁用了 PasteWin，或组织策略禁止自启，还需在系统中恢复允许；应用内开关表示启动项登记状态。
 
+图片记录显示缩略图、尺寸和大小，点击“查看内容”查看原图。图片也支持收藏、删除、重启保留、Ctrl+Enter 复制和 Enter/双击粘贴。同一次复制包含文字和图片时保存为一条记录，默认复制/粘贴文字；预览中可单独选择“复制图片”或“粘贴图片”。搜索只匹配文字，不识别图片中的文字。目标应用必须支持图片粘贴；PasteWin 只发送 Ctrl+V，绝不额外发送 Enter 或提交消息。
+
 ## 安装包
 
-双击 `bin\pastewin-0.1.0-amd64-setup.exe` 运行中文安装向导：
+双击 `bin\pastewin-0.2.0-amd64-setup.exe` 运行中文安装向导：
 
 - 选择安装目录，默认 `%LOCALAPPDATA%\Programs\PasteWin`，仅为当前用户安装。
 - 分别选择是否创建桌面、开始菜单快捷方式。
@@ -53,8 +55,10 @@ powershell -NoProfile -File build/windows/test-installer.ps1 -NsisPath 'C:\Tools
 
 - 通过 `AddClipboardFormatListener` 接收 Windows 剪贴板变化通知，空闲时不轮询。
 - Unicode 纯文本捕获，短暂占用时重试；保留原始换行、空格，重复文本合并。
+- 静态 PNG 与未压缩 DIB/DIBV5 图片捕获，保留透明通道，按规范化像素去重；回写 PNG 和 sRGB DIBV5。
 - SQLite 持久化历史、收藏和暂停状态，列表按 50 条分页，选中后再读取全文。
 - 最多 500 条、单条最多 1 MB；容量不足时清理最旧的未收藏记录。若全部 500 条都已收藏，新内容不再保留。
+- 图片最多 1600 万像素，原始格式缓冲合计最多 64 MiB，编码后每张 PNG 最多 20 MiB；图片和缩略图有效数据合计最多 256 MiB。超限时优先清理最旧未收藏图片记录，无法腾出空间则拒绝新增并提示。
 - 搜索、收藏、删除、清除未收藏记录、暂停与恢复。
 - 全局快捷键、托盘、单实例、无边框可调整窗口。
 - 设置页开机自启开关，登录 Windows 后在托盘后台运行。
@@ -99,15 +103,22 @@ npm run dev
 - `clipboard_service.go`：前后端服务、捕获与粘贴协调。
 - `internal/native/`：Windows 消息窗口、剪贴板格式和输入注入。
 - `internal/history/`：SQLite 存储、搜索与容量策略，附行为测试。
+- `internal/clipimage/`：有界 PNG/DIB 解析、图片去重和缩略图。
+- `capture_pipeline.go`：图片后台处理与有界队列，避免占用剪贴板进行编码。
+- `image_assets.go`：通过 Wails 应用内资源按记录 ID 读取图片，不开启独立 HTTP 服务。
 - `internal/startup/`：当前用户 Run 启动项管理，附隔离注册表行为测试。
 - `frontend/src/`：界面、样式和开发预览。
 - `frontend/bindings/`：Wails 自动生成的 TypeScript 绑定，请勿手改。
 
 默认数据路径为 `%APPDATA%\PasteWin\history.db`。可设置 `PASTEWIN_DATA_DIR` 改用独立数据目录进行测试。程序只记录启动之后的新复制事件，不主动采集启动前的剪贴板内容。
 
+图片原图和缩略图以 BLOB 保存在同一数据库中，删除、清理和淘汰会同步删除对应图片数据。旧数据库自动迁移，保留文本、收藏及暂停状态。SQLite 会复用已删除空间，数据库和 WAL 文件的磁盘占用可能大于图片有效数据量，不会在每次删除后立刻缩小。
+
 ## 原型边界
 
-- 当前只处理纯文本；图片、文件、HTML/RTF、自定义快捷键未实现。
+- 支持纯文本与静态位图；复制图片文件（例如资源管理器 Ctrl+C）、动图、OCR、图片编辑、HTML/RTF 图文还原和自定义快捷键未实现。
+- DIB 支持 1/4/8 位调色板及 16/24/32 位 RGB/bitfields；不支持压缩 DIB、链接/嵌入色彩配置等特殊位图，读取失败会尝试其他可用图片格式。PNG 规范化为 8 位 RGBA，不保留源文件元数据或专业色彩配置。
+- 图片处理最多同时保留一个处理任务和一个待处理快照；复制过快导致积压时跳过较旧的待处理记录并提示，不保证保存每一次高速复制。暂停/恢复、清除未收藏记录和退出会丢弃尚未完成的旧任务。
 - 数据库为本地明文，不上传数据，不自动识别所有密码或敏感内容；可手动暂停。程序尊重退出历史的标准标记，但取决于源应用是否设置。
 - 自动粘贴受 Windows 焦点策略和权限级别约束。普通权限不能保证向管理员应用注入输入，特殊编辑器也可能不接受模拟 Ctrl+V。
 - 隐藏窗口会保留 WebView，以便快速唤起；这不是最低内存方案。应统计主进程和所有关联 WebView2 进程，而非只看 Go 进程。
@@ -117,6 +128,20 @@ npm run dev
 ## 验证
 
 自动测试覆盖：中文与空白保真、重复内容保持收藏、500 条容量、分页、字面搜索、清理保留收藏、超大文本拒绝、数据库重启持久化。
+
+图片测试覆盖透明像素往返、PNG 编码差异去重、DIB 方向/行补齐/调色板/bitfields、损坏数据与尺寸边界、缩略图、旧库迁移、图片容量淘汰和级联删除、暂停与清理后的过期任务、图片资源路径限制。
+
+原生图片集成测试默认跳过；显式运行时会用合成内容替换系统剪贴板，不访问真实历史库。两个包分开运行，避免同时争用剪贴板：
+
+```powershell
+$env:PASTEWIN_TEST_CLIPBOARD = '1'
+go test . -run TestImageCaptureAndCopyIntegration -v
+go test ./internal/native -run TestImageClipboardIntegration -v
+Remove-Item Env:PASTEWIN_TEST_CLIPBOARD
+go test ./internal/clipimage -run '^$' -fuzz FuzzDecodeDIB -fuzztime 15s
+```
+
+跨应用验收应包含截图、浏览器复制图片、透明 PNG、画图及聊天编辑区回贴，并确认没有额外发送 Enter；界面检查默认 360 × 680 和最小 320 × 420 下的缩略图、图文混合预览、长文本与键盘操作。服务集成测试不能代替这些桌面回归。
 
 自启测试覆盖隔离注册表中的开关读写、重复操作、中文及空格路径、移动路径后重新登记、超长命令拒绝与无关值保留；安装回归覆盖启动项迁移、卸载清理和便携副本保护。实际注销/登录仍需在 Windows 会话中验证。
 

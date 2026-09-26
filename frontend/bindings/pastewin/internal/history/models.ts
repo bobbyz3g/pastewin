@@ -9,6 +9,10 @@ export interface Entry {
     "createdAt": number;
     "updatedAt": number;
     "pinned": boolean;
+    "hasImage": boolean;
+    "imageWidth": number;
+    "imageHeight": number;
+    "imageBytes": number;
 }
 
 export interface Page {

@@ -9,6 +9,11 @@ export interface Entry {
   createdAt: number;
   updatedAt: number;
   pinned: boolean;
+  hasImage: boolean;
+  imageWidth: number;
+  imageHeight: number;
+  imageBytes: number;
+  previewImage?: string;
 }
 export interface Page {
   entries: Entry[];
@@ -27,6 +32,11 @@ export const preview =
   import.meta.env.DEV &&
   new URLSearchParams(location.search).get("preview") === "1";
 
+export const imageURL = (entry: Entry, thumbnail = false) =>
+  preview
+    ? entry.previewImage
+    : `/history-image/${entry.id}/${thumbnail ? "thumbnail" : "image"}.png`;
+
 interface API {
   List(query: string, pinned: boolean, offset: number): Promise<Page>;
   Get(id: number): Promise<Entry>;
@@ -34,7 +44,9 @@ interface API {
   Delete(id: number): Promise<void>;
   ClearUnpinned(): Promise<void>;
   Copy(id: number): Promise<void>;
+  CopyImage(id: number): Promise<void>;
   Paste(id: number): Promise<void>;
+  PasteImage(id: number): Promise<void>;
   SetPaused(paused: boolean): Promise<void>;
   AutoStart(): Promise<boolean>;
   SetAutoStart(enabled: boolean): Promise<boolean>;

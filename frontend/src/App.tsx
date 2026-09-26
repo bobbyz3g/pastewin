@@ -7,6 +7,7 @@ import {
   Copy,
   CornerDownLeft,
   FileText,
+  Image as ImageIcon,
   Link2,
   PanelsTopLeft,
   ScanText,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import {
   api,
+  imageURL,
   listen,
   preview,
   type Entry,
@@ -37,6 +39,38 @@ const time = (value: number) =>
 const isURL = (text: string) => /^https?:\/\/\S+$/.test(text.trim());
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
+
+const imageInfo = (entry: Entry) =>
+  `${entry.imageWidth} × ${entry.imageHeight} · ${entry.imageBytes < 1048576 ? `${Math.max(1, Math.round(entry.imageBytes / 1024))} KiB` : `${(entry.imageBytes / 1048576).toFixed(1)} MiB`}`;
+
+function Picture({
+  entry,
+  thumbnail = false,
+}: {
+  entry: Entry;
+  thumbnail?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const src = imageURL(entry, thumbnail);
+  useEffect(() => setFailed(false), [src]);
+  return failed ? (
+    <span className="image-unavailable" role="status">
+      图片无法读取，请刷新或重新选择
+    </span>
+  ) : (
+    <img
+      className={
+        thumbnail ? "clip-thumbnail checkerboard" : "preview-image checkerboard"
+      }
+      src={src}
+      alt={`图片，${entry.imageWidth} × ${entry.imageHeight} 像素`}
+      loading={thumbnail ? "lazy" : "eager"}
+      decoding="async"
+      draggable={false}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export default function App() {
   const [page, setPage] = useState<Page>(empty),
@@ -324,7 +358,7 @@ export default function App() {
                 ? "换个关键词再试试"
                 : pinned
                   ? "选中一条记录，点击下方星标。"
-                  : "复制文字后，就能在这里随时找回。"}
+                  : "复制文字或图片后，就能在这里随时找回。"}
             </p>
             {!query && !pinned && <kbd>Ctrl + Shift + V</kbd>}
           </div>
@@ -340,7 +374,9 @@ export default function App() {
             >
               <span className="clip-meta">
                 <span className="clip-kind">
-                  {isURL(item.preview) ? (
+                  {item.hasImage ? (
+                    <ImageIcon size={11} />
+                  ) : isURL(item.preview) ? (
                     <Link2 size={11} />
                   ) : (
                     <FileText size={11} />
@@ -351,11 +387,22 @@ export default function App() {
                 </span>
                 <time>{time(item.updatedAt)}</time>
               </span>
-              <span
-                className={`clip-text ${isURL(item.preview) ? "link-text" : ""}`}
-              >
-                {item.preview}
-              </span>
+              {item.hasImage && (
+                <>
+                  <Picture entry={item} thumbnail />
+                  <span className="image-info">
+                    {imageInfo(item)}
+                    {item.characters > 0 ? " · 含文字" : ""}
+                  </span>
+                </>
+              )}
+              {item.characters > 0 && (
+                <span
+                  className={`clip-text ${isURL(item.preview) ? "link-text" : ""}`}
+                >
+                  {item.preview}
+                </span>
+              )}
             </button>
           ))
         )}
@@ -376,8 +423,8 @@ export default function App() {
       >
         <button
           className="icon-button"
-          aria-label="查看全文"
-          title="查看全文"
+          aria-label="查看内容"
+          title="查看内容"
           disabled={!entry}
           onClick={() => setDetails(true)}
         >
@@ -470,12 +517,17 @@ export default function App() {
         </div>
         <div className="preview-meta">
           {entry
-            ? `${entry.characters.toLocaleString()} 字符 · ${time(entry.updatedAt)}`
+            ? `${entry.hasImage ? imageInfo(entry) : `${entry.characters.toLocaleString()} 字符`} · ${time(entry.updatedAt)}`
             : "正在读取…"}
         </div>
-        <pre className="content-text" tabIndex={0}>
-          {entry?.text}
-        </pre>
+        <div className="preview-content">
+          {details && entry?.hasImage && <Picture entry={entry} />}
+          {entry && entry.characters > 0 && (
+            <pre className="content-text" tabIndex={0}>
+              {entry?.text}
+            </pre>
+          )}
+        </div>
         <div className="preview-actions">
           <button
             className="secondary"
@@ -483,7 +535,7 @@ export default function App() {
             onClick={copy}
           >
             <Copy size={14} />
-            复制
+            {entry?.hasImage && entry.characters > 0 ? "复制文字" : "复制"}
           </button>
           <button
             className="primary"
@@ -494,9 +546,39 @@ export default function App() {
             }}
           >
             <ClipboardPaste size={14} />
-            粘贴到原应用
+            {entry?.hasImage && entry.characters > 0
+              ? "粘贴文字"
+              : "粘贴到原应用"}
           </button>
         </div>
+        {entry?.hasImage && entry.characters > 0 && (
+          <div className="preview-actions image-actions">
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() =>
+                void perform(
+                  () => api("CopyImage", entry.id),
+                  preview ? "预览：已模拟复制图片" : "已复制图片",
+                )
+              }
+            >
+              <Copy size={14} />
+              复制图片
+            </button>
+            <button
+              className="primary"
+              disabled={busy || !status?.canPaste}
+              onClick={() => {
+                setDetails(false);
+                void perform(() => api("PasteImage", entry.id));
+              }}
+            >
+              <ClipboardPaste size={14} />
+              粘贴图片
+            </button>
+          </div>
+        )}
       </dialog>
 
       {notice &&
@@ -532,7 +614,7 @@ export default function App() {
         <div className="setting-row">
           <div>
             <strong>记录剪贴板</strong>
-            <p>只记录程序运行期间新复制的文本。</p>
+            <p>只记录程序运行期间新复制的文字和图片。</p>
           </div>
           <button
             className="secondary"
@@ -601,8 +683,9 @@ export default function App() {
           <div>
             <strong>所有历史都保存在本机</strong>
             <p>
-              最多保留 500 条，每条不超过 1
-              MB。收藏记录不会自动清理。原型使用本地明文数据库，请按需暂停记录敏感内容。
+              最多保留 500 条；文本每条 1 MiB，图片每张 1600 万像素、编码后 20
+              MiB，图片总量 256
+              MiB。收藏不会自动清理。使用本地明文数据库，请按需暂停记录敏感内容。
             </p>
             <code>{status?.databasePath}</code>
           </div>
@@ -615,7 +698,7 @@ export default function App() {
             </span>
           </div>
           <p>Windows 本地剪贴板工具</p>
-          <p>记录、搜索和收藏复制过的文本，快速粘贴回原应用。</p>
+          <p>记录文字和图片，搜索文字、收藏内容，快速粘贴回原应用。</p>
         </section>
         <div className="dialog-footer">
           {confirmClear ? (
