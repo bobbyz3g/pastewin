@@ -13,6 +13,10 @@ import * as history$0 from "./internal/history/models.js";
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
+export function AutoStart(): $CancellablePromise<boolean> {
+    return $Call.ByID(3083968484);
+}
+
 export function ClearUnpinned(): $CancellablePromise<void> {
     return $Call.ByID(461867417);
 }
@@ -47,6 +51,10 @@ export function Pin(id: number, pinned: boolean): $CancellablePromise<void> {
 
 export function Quit(): $CancellablePromise<void> {
     return $Call.ByID(709789836);
+}
+
+export function SetAutoStart(enabled: boolean): $CancellablePromise<boolean> {
+    return $Call.ByID(601388146, enabled);
 }
 
 export function SetPaused(paused: boolean): $CancellablePromise<void> {

@@ -15,6 +15,9 @@ Unicode true
 !define EXE "pastewin.exe"
 !define UNINSTALLER "uninstall-pastewin.exe"
 !define KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}"
+!ifndef RUN_KEY
+!define RUN_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
+!endif
 !ifndef VERSION
 !define VERSION "0.1.0"
 !endif
@@ -58,6 +61,7 @@ Var DesktopBox
 Var MenuBox
 Var OldRenamed
 Var InstallMutex
+Var StartupCommand
 
 ; One installer/uninstaller at a time, including during directory migration.
 !macro InitShared
@@ -204,6 +208,15 @@ Section "安装"
   ${If} $OldDir == ""
     StrCpy $OldDir $INSTDIR
   ${EndIf}
+  ReadRegStr $StartupCommand HKCU "${RUN_KEY}" "${APP_ID}"
+  ${If} $StartupCommand == '$\"$OldDir\${EXE}$\" --autostart'
+    StrLen $0 '$\"$INSTDIR\${EXE}$\" --autostart'
+    ${If} $0 > 260
+      MessageBox MB_OK|MB_ICONSTOP "目标路径过长，无法保留开机自启设置，请选择较短的安装目录。" /SD IDOK
+      SetErrorLevel 206
+      Quit
+    ${EndIf}
+  ${EndIf}
   ${If} ${FileExists} "$OldDir\pastewin.previous.exe"
     MessageBox MB_OK|MB_ICONSTOP "旧目录存在 pastewin.previous.exe 备份。请先恢复或移走它，然后重试。" /SD IDOK
     SetErrorLevel 80
@@ -241,6 +254,21 @@ Section "安装"
     SetErrorLevel 1603
     Quit
   ${EndIf}
+  ; Only migrate a startup entry owned by the installation being replaced.
+  ${If} $OldDir != $INSTDIR
+  ${AndIf} $StartupCommand == '$\"$OldDir\${EXE}$\" --autostart'
+    ClearErrors
+    WriteRegStr HKCU "${RUN_KEY}" "${APP_ID}" '$\"$INSTDIR\${EXE}$\" --autostart'
+    ${If} ${Errors}
+      Delete "$INSTDIR\${EXE}"
+      ${If} $OldRenamed = 1
+        Rename "$OldDir\pastewin.previous.exe" "$OldDir\${EXE}"
+      ${EndIf}
+      MessageBox MB_OK|MB_ICONSTOP "无法更新开机自启路径，已尝试恢复旧版程序。" /SD IDOK
+      SetErrorLevel 5
+      Quit
+    ${EndIf}
+  ${EndIf}
   Delete "$OldDir\pastewin.previous.exe"
   ${If} $OldDir != $INSTDIR
     Delete "$OldDir\${UNINSTALLER}"
@@ -277,6 +305,15 @@ FunctionEnd
 
 Section "Uninstall"
   !insertmacro CheckWritable "$INSTDIR\${EXE}" uninstall
+  ReadRegStr $0 HKCU "${RUN_KEY}" "${APP_ID}"
+  ${If} $0 == '$\"$INSTDIR\${EXE}$\" --autostart'
+    ClearErrors
+    DeleteRegValue HKCU "${RUN_KEY}" "${APP_ID}"
+    ${If} ${Errors}
+      SetErrorLevel 5
+      Quit
+    ${EndIf}
+  ${EndIf}
   ClearErrors
   Delete "$INSTDIR\${EXE}"
   ${If} ${Errors}

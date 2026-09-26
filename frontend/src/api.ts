@@ -36,6 +36,8 @@ interface API {
   Copy(id: number): Promise<void>;
   Paste(id: number): Promise<void>;
   SetPaused(paused: boolean): Promise<void>;
+  AutoStart(): Promise<boolean>;
+  SetAutoStart(enabled: boolean): Promise<boolean>;
   Status(): Promise<Status>;
   Hide(): Promise<void>;
   Quit(): Promise<void>;

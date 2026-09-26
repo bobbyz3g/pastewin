@@ -9,6 +9,7 @@ import (
 
 	"pastewin/internal/history"
 	"pastewin/internal/native"
+	"pastewin/internal/startup"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -153,6 +154,16 @@ func (s *ClipboardService) SetPaused(paused bool) error {
 	s.app.Event.Emit("status:changed")
 	return nil
 }
+
+func (s *ClipboardService) AutoStart() (bool, error) { return startup.Enabled() }
+
+func (s *ClipboardService) SetAutoStart(enabled bool) (bool, error) {
+	if err := startup.SetEnabled(enabled); err != nil {
+		return false, err
+	}
+	return startup.Enabled()
+}
+
 func (s *ClipboardService) Status() Status {
 	s.opMu.Lock()
 	paused := s.paused

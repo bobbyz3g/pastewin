@@ -18,6 +18,7 @@ let entries: Entry[] = [
   pinned: i === 0 || i === 2,
 }));
 let paused = false;
+let autoStart = false;
 const changed = () => window.dispatchEvent(new CustomEvent("history:changed"));
 export const demo = {
   async List(query: string, pinned: boolean, offset: number) {
@@ -66,6 +67,13 @@ export const demo = {
       databasePath: "仅浏览器预览 · 示例数据",
       canPaste: false,
     };
+  },
+  async AutoStart() {
+    return autoStart;
+  },
+  async SetAutoStart(enabled: boolean) {
+    autoStart = enabled;
+    return autoStart;
   },
   async Hide() {},
   async Quit() {},

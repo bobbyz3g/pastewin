@@ -438,6 +438,37 @@ dialog::backdrop {
   margin: 16px 0;
   color: #716b80;
 }
+.startup-switch {
+  flex-direction: column;
+  gap: 4px;
+  min-width: 48px;
+  padding: 5px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.switch-track {
+  display: flex;
+  align-items: center;
+  width: 32px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 10px;
+  background: #a5a0b1;
+}
+.switch-track > span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+}
+.startup-switch[aria-checked="true"] .switch-track {
+  background: var(--blue);
+  justify-content: flex-end;
+}
+.setting-row .setting-error {
+  color: #a04747;
+  overflow-wrap: anywhere;
+}
 .storage-note svg {
   flex: none;
   width: 16px;

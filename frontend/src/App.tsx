@@ -53,6 +53,8 @@ export default function App() {
     [settings, setSettings] = useState(false),
     [details, setDetails] = useState(false),
     [confirmClear, setConfirmClear] = useState(false);
+  const [autoStart, setAutoStart] = useState<boolean | null>(null),
+    [autoStartError, setAutoStartError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null),
     detailRef = useRef<HTMLDialogElement>(null),
@@ -146,6 +148,22 @@ export default function App() {
     const d = dialogRef.current;
     if (settings && !d?.open) d?.showModal();
     else if (!settings && d?.open) d.close();
+  }, [settings]);
+  useEffect(() => {
+    if (!settings) return;
+    let active = true;
+    setAutoStart(null);
+    setAutoStartError("");
+    api("AutoStart")
+      .then((value) => {
+        if (active) setAutoStart(value);
+      })
+      .catch((error) => {
+        if (active) setAutoStartError(errorText(error));
+      });
+    return () => {
+      active = false;
+    };
   }, [settings]);
   useEffect(() => {
     const d = detailRef.current;
@@ -532,6 +550,51 @@ export default function App() {
             <p>在当前应用中唤起，选中后粘贴回原处。</p>
           </div>
           <kbd>Ctrl Shift V</kbd>
+        </div>
+        <div className="setting-row">
+          <div>
+            <strong id="autostart-label">开机自启</strong>
+            <p id="autostart-description">登录 Windows 后在托盘后台运行。</p>
+            {autoStartError && (
+              <p className="setting-error" role="alert">
+                {autoStartError}，请重新打开设置重试。
+              </p>
+            )}
+          </div>
+          <button
+            className="startup-switch"
+            role="switch"
+            aria-checked={autoStart === true}
+            aria-labelledby="autostart-label"
+            aria-describedby="autostart-description"
+            disabled={busy || autoStart === null}
+            onClick={() =>
+              void perform(async () => {
+                const enabled = await api("SetAutoStart", !autoStart);
+                setAutoStart(enabled);
+                notify(
+                  preview
+                    ? "预览：已模拟开机自启设置"
+                    : enabled
+                      ? "已开启开机自启"
+                      : "已关闭开机自启",
+                );
+              })
+            }
+          >
+            <span className="switch-track" aria-hidden="true">
+              <span />
+            </span>
+            <span>
+              {autoStart === null
+                ? autoStartError
+                  ? "不可用"
+                  : "读取中"
+                : autoStart
+                  ? "已开启"
+                  : "已关闭"}
+            </span>
+          </button>
         </div>
         <div className="storage-note">
           <ShieldCheck size={20} />

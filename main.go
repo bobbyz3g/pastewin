@@ -7,6 +7,10 @@ import (
 	"image/color"
 	"image/png"
 	"log"
+	"os"
+	"slices"
+
+	"pastewin/internal/startup"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 	"github.com/wailsapp/wails/v3/pkg/events"
@@ -21,8 +25,8 @@ func main() {
 		Name: "PasteWin", Description: "本地剪贴板工作台", Icon: trayIcon(),
 		Services: []application.Service{application.NewService(service)},
 		Assets:   application.AssetOptions{Handler: application.AssetFileServerFS(assets)},
-		SingleInstance: &application.SingleInstanceOptions{UniqueID: "dev.pastewin.app", OnSecondInstanceLaunch: func(_ application.SecondInstanceData) {
-			if service.window != nil {
+		SingleInstance: &application.SingleInstanceOptions{UniqueID: "dev.pastewin.app", OnSecondInstanceLaunch: func(data application.SecondInstanceData) {
+			if service.window != nil && !slices.Contains(data.Args, startup.Argument) {
 				service.show()
 			}
 		}},
@@ -31,6 +35,7 @@ func main() {
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "PasteWin", Name: "main", Width: 360, Height: 680, MinWidth: 320, MinHeight: 420,
 		Frameless: true, BackgroundColour: application.NewRGB(234, 233, 241), URL: "/",
+		Hidden: slices.Contains(os.Args[1:], startup.Argument),
 	})
 	service.window = window
 	window.RegisterHook(events.Common.WindowClosing, func(e *application.WindowEvent) { window.Hide(); e.Cancel() })
