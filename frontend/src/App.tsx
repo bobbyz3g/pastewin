@@ -234,9 +234,33 @@ export default function App() {
   const paste = useCallback(() => {
     if (selected !== null) void perform(() => api("Paste", selected));
   }, [selected, perform]);
+  const deleteSelected = useCallback(() => {
+    if (selected !== null)
+      void perform(() => api("Delete", selected), "已删除记录");
+  }, [selected, perform]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (e.isComposing || settings || details) return;
+      if (e.key === "Delete") {
+        const target = e.target;
+        const editing =
+          target instanceof HTMLElement &&
+          (target.isContentEditable ||
+            target.closest("input, textarea, select"));
+        // The panel focuses search on opening; an empty search has no text to delete.
+        if (
+          (editing &&
+            !(target === searchRef.current && !searchRef.current.value)) ||
+          e.ctrlKey ||
+          e.altKey ||
+          e.shiftKey ||
+          e.metaKey
+        )
+          return;
+        e.preventDefault();
+        if (!e.repeat) deleteSelected();
+        return;
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         if (query) setQuery("");
@@ -268,7 +292,17 @@ export default function App() {
     };
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
-  }, [settings, details, query, page, selected, copy, paste, fail]);
+  }, [
+    settings,
+    details,
+    query,
+    page,
+    selected,
+    copy,
+    paste,
+    deleteSelected,
+    fail,
+  ]);
   async function more() {
     const current = request.current;
     const result = await api("List", query, pinned, page.entries.length);
@@ -444,11 +478,10 @@ export default function App() {
         <button
           className="icon-button delete-button"
           aria-label="删除记录"
-          title="删除记录"
+          title="删除记录 · Delete"
+          aria-keyshortcuts="Delete"
           disabled={busy || !entry}
-          onClick={() =>
-            entry && void perform(() => api("Delete", entry.id), "已删除记录")
-          }
+          onClick={deleteSelected}
         >
           <Trash2 size={15} />
         </button>
@@ -493,7 +526,7 @@ export default function App() {
         </span>
         <span
           className="shortcut-hint"
-          title="方向键选择，Enter 粘贴，Esc 隐藏"
+          title="方向键选择，Enter 粘贴，Delete 删除，Esc 隐藏"
         >
           ↑ ↓ <span>选择</span>
         </span>
