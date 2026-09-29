@@ -244,6 +244,7 @@ func (s *ClipboardService) Hide() { s.window.Hide() }
 func (s *ClipboardService) Quit() { s.app.Quit() }
 
 func (s *ClipboardService) show() {
+	reset := !s.window.IsFocused()
 	h := native.Foreground()
 	s.stateMu.Lock()
 	if native.ExternalWindow(h) {
@@ -252,5 +253,5 @@ func (s *ClipboardService) show() {
 	s.stateMu.Unlock()
 	s.window.Show()
 	s.window.Focus()
-	s.app.Event.Emit("panel:shown")
+	s.app.Event.Emit("panel:shown", reset)
 }

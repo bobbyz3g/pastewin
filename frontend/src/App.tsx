@@ -1,5 +1,11 @@
 import { createPortal } from "react-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Check,
   Clipboard,
@@ -18,19 +24,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import {
-  api,
-  imageURL,
-  listen,
-  preview,
-  type Entry,
-  type Page,
-  type Status,
-} from "./api";
+import { api, imageURL, listen, preview, type Entry, type Status } from "./api";
+import { useHistory } from "./useHistory";
 import buildInfo from "../../build/windows/info.json";
 import "./style.css";
 
-const empty: Page = { entries: [], total: 0, all: 0, pinned: 0 };
 const time = (value: number) =>
   new Date(value).toLocaleTimeString("zh-CN", {
     hour: "2-digit",
@@ -73,13 +71,8 @@ function Picture({
 }
 
 export default function App() {
-  const [page, setPage] = useState<Page>(empty),
-    [query, setQuery] = useState(""),
-    [pinned, setPinned] = useState(false);
-  const [selected, setSelected] = useState<number | null>(null),
-    [entry, setEntry] = useState<Entry | null>(null);
+  const [entry, setEntry] = useState<Entry | null>(null);
   const [status, setStatus] = useState<Status | null>(null),
-    [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(
       null,
@@ -90,9 +83,9 @@ export default function App() {
   const [autoStart, setAutoStart] = useState<boolean | null>(null),
     [autoStartError, setAutoStartError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null),
+    listRef = useRef<HTMLElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null),
     detailRef = useRef<HTMLDialogElement>(null),
-    request = useRef(0),
     noticeTimer = useRef<ReturnType<typeof setTimeout>>();
   const notify = useCallback((text: string, error = false) => {
     setNotice({ text, error });
@@ -106,31 +99,25 @@ export default function App() {
     (error: unknown) => notify(errorText(error), true),
     [notify],
   );
+  const {
+    page,
+    selected,
+    query,
+    pinned,
+    loading,
+    following,
+    stopFollowing,
+    refresh,
+    reopen,
+    more,
+    setQuery,
+    setPinned,
+    setSelected,
+  } = useHistory(fail);
   const loadStatus = useCallback(
     () => api("Status").then(setStatus).catch(fail),
     [fail],
   );
-  const refresh = useCallback(async () => {
-    const current = ++request.current;
-    try {
-      const next = await api("List", query, pinned, 0);
-      if (current !== request.current) return;
-      setPage(next);
-      setSelected((id) =>
-        next.entries.some((e) => e.id === id)
-          ? id
-          : (next.entries[0]?.id ?? null),
-      );
-    } catch (e) {
-      fail(e);
-    } finally {
-      if (current === request.current) setLoading(false);
-    }
-  }, [query, pinned, fail]);
-  useEffect(() => {
-    const timer = setTimeout(refresh, 120);
-    return () => clearTimeout(timer);
-  }, [refresh]);
   useEffect(() => {
     let active = true;
     setEntry(null);
@@ -152,10 +139,18 @@ export default function App() {
       ["status:changed", () => void loadStatus()],
       [
         "panel:shown",
-        () => {
-          void refresh();
+        (reset) => {
           void loadStatus();
-          setTimeout(() => searchRef.current?.focus(), 0);
+          if (reset !== true) return;
+          // Close the modal before focusing search; dialog.close restores focus.
+          dialogRef.current?.close();
+          detailRef.current?.close();
+          setSettings(false);
+          setDetails(false);
+          setConfirmClear(false);
+          setEntry(null);
+          reopen();
+          searchRef.current?.focus();
         },
       ],
       ["app:error", (data) => notify(String(data), true)],
@@ -172,7 +167,7 @@ export default function App() {
       disposed = true;
       cleanup.forEach((off) => off());
     };
-  }, [refresh, loadStatus, notify, fail]);
+  }, [refresh, reopen, loadStatus, notify, fail]);
   useEffect(() => {
     void loadStatus();
     searchRef.current?.focus();
@@ -204,13 +199,17 @@ export default function App() {
     if (details && !d?.open) d?.showModal();
     else if (!details && d?.open) d.close();
   }, [details]);
+  useLayoutEffect(() => {
+    if (following.current) listRef.current?.scrollTo({ top: 0 });
+  }, [page, following]);
   useEffect(() => {
-    document
-      .querySelector(".clip.selected")
+    listRef.current
+      ?.querySelector(".clip.selected")
       ?.scrollIntoView({ block: "nearest" });
   }, [selected]);
   const perform = useCallback(
     async (action: () => Promise<unknown>, message?: string) => {
+      stopFollowing();
       if (busy) return;
       setBusy(true);
       try {
@@ -222,7 +221,7 @@ export default function App() {
         setBusy(false);
       }
     },
-    [busy, notify, fail],
+    [busy, notify, fail, stopFollowing],
   );
   const copy = useCallback(() => {
     if (selected !== null)
@@ -303,18 +302,20 @@ export default function App() {
     deleteSelected,
     fail,
   ]);
-  async function more() {
-    const current = request.current;
-    const result = await api("List", query, pinned, page.entries.length);
-    if (current === request.current)
-      setPage((p) => ({
-        ...result,
-        entries: [...p.entries, ...result.entries],
-      }));
-  }
-
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onPointerDownCapture={stopFollowing}
+      onWheelCapture={stopFollowing}
+      onTouchMoveCapture={stopFollowing}
+      onKeyDownCapture={(e) => {
+        if (
+          !["Control", "Shift", "Alt", "Meta"].includes(e.key) &&
+          !(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "v")
+        )
+          stopFollowing();
+      }}
+    >
       <header className="titlebar">
         <div className="drag-handle" title="拖动 PasteWin 窗口">
           <PanelsTopLeft size={18} />
@@ -374,7 +375,12 @@ export default function App() {
           {status.hotkeyError}
         </div>
       )}
-      <main className="clip-list" aria-label="剪贴板历史" aria-busy={loading}>
+      <main
+        ref={listRef}
+        className="clip-list"
+        aria-label="剪贴板历史"
+        aria-busy={loading}
+      >
         {loading ? (
           <div className="empty-list">正在读取历史…</div>
         ) : page.entries.length === 0 ? (
