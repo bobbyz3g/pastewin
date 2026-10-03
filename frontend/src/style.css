@@ -296,6 +296,37 @@ kbd {
   color: var(--blue);
   font-size: 11px;
 }
+.entry-menu {
+  position: fixed;
+  z-index: 20;
+  min-width: 148px;
+  padding: 5px;
+  border: 1px solid #dedbe6;
+  border-radius: var(--radius-md);
+  background: #f8f7fb;
+  box-shadow: 0 6px 24px #28213d26;
+  --wails-draggable: no-drag;
+}
+.entry-menu button {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 32px;
+  gap: 9px;
+  padding: 0 10px;
+  text-align: left;
+}
+.entry-menu button:focus {
+  outline: none;
+  background: #ccdef18c;
+}
+.entry-menu .entry-menu-delete {
+  color: #a04747;
+}
+.entry-menu .entry-menu-delete:hover,
+.entry-menu .entry-menu-delete:focus {
+  background: #a0474710;
+}
 .selection-actions {
   flex: none;
   display: flex;

@@ -19,7 +19,7 @@ Unicode true
 !define RUN_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
 !endif
 !ifndef VERSION
-!define VERSION "0.2.0"
+!define VERSION "0.3.0"
 !endif
 !ifndef ARCH
 !define ARCH "amd64"

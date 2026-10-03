@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { api, imageURL, listen, preview, type Entry, type Status } from "./api";
 import { useHistory } from "./useHistory";
+import { EntryMenu } from "./EntryMenu";
 import buildInfo from "../../build/windows/info.json";
 import "./style.css";
 
@@ -71,6 +72,12 @@ function Picture({
 }
 
 export default function App() {
+  const [contextMenu, setContextMenu] = useState<{
+    id: number;
+    x: number;
+    y: number;
+    scrollTop: number;
+  } | null>(null);
   const [entry, setEntry] = useState<Entry | null>(null);
   const [status, setStatus] = useState<Status | null>(null),
     [busy, setBusy] = useState(false);
@@ -114,6 +121,20 @@ export default function App() {
     setPinned,
     setSelected,
   } = useHistory(fail);
+  const menuEntry =
+    contextMenu && selected === contextMenu.id
+      ? page.entries.find((item) => item.id === contextMenu.id)
+      : undefined;
+  const closeMenu = useCallback((restoreFocus = false) => {
+    setContextMenu(null);
+    if (restoreFocus) searchRef.current?.focus({ preventScroll: true });
+  }, []);
+  useEffect(() => {
+    closeMenu();
+  }, [query, pinned, settings, details, closeMenu]);
+  useEffect(() => {
+    if (contextMenu && !menuEntry) closeMenu(true);
+  }, [contextMenu, menuEntry, closeMenu]);
   const loadStatus = useCallback(
     () => api("Status").then(setStatus).catch(fail),
     [fail],
@@ -142,6 +163,7 @@ export default function App() {
         (reset) => {
           void loadStatus();
           if (reset !== true) return;
+          setContextMenu(null);
           // Close the modal before focusing search; dialog.close restores focus.
           dialogRef.current?.close();
           detailRef.current?.close();
@@ -203,6 +225,7 @@ export default function App() {
     if (following.current) listRef.current?.scrollTo({ top: 0 });
   }, [page, following]);
   useEffect(() => {
+    if (contextMenu) return;
     listRef.current
       ?.querySelector(".clip.selected")
       ?.scrollIntoView({ block: "nearest" });
@@ -233,13 +256,24 @@ export default function App() {
   const paste = useCallback(() => {
     if (selected !== null) void perform(() => api("Paste", selected));
   }, [selected, perform]);
+  const deleteEntry = useCallback(
+    (id: number) => {
+      void perform(() => api("Delete", id), "已删除记录");
+    },
+    [perform],
+  );
+  const togglePin = useCallback(
+    (item: Pick<Entry, "id" | "pinned">) => {
+      void perform(() => api("Pin", item.id, !item.pinned));
+    },
+    [perform],
+  );
   const deleteSelected = useCallback(() => {
-    if (selected !== null)
-      void perform(() => api("Delete", selected), "已删除记录");
-  }, [selected, perform]);
+    if (selected !== null) deleteEntry(selected);
+  }, [selected, deleteEntry]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.isComposing || settings || details) return;
+      if (e.isComposing || settings || details || contextMenu) return;
       if (e.key === "Delete") {
         const target = e.target;
         const editing =
@@ -292,6 +326,7 @@ export default function App() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, [
+    contextMenu,
     settings,
     details,
     query,
@@ -380,6 +415,14 @@ export default function App() {
         className="clip-list"
         aria-label="剪贴板历史"
         aria-busy={loading}
+        onScroll={() => {
+          // A queued scroll event from revealing the card can arrive after opening.
+          if (
+            contextMenu &&
+            listRef.current?.scrollTop !== contextMenu.scrollTop
+          )
+            closeMenu();
+        }}
       >
         {loading ? (
           <div className="empty-list">正在读取历史…</div>
@@ -408,9 +451,40 @@ export default function App() {
               key={item.id}
               className={`clip ${selected === item.id ? "selected" : ""}`}
               aria-pressed={selected === item.id}
+              aria-haspopup="menu"
+              onContextMenu={(e) => {
+                e.preventDefault();
+                if (busy) return;
+                setSelected(item.id);
+                const rect = e.currentTarget.getBoundingClientRect();
+                setContextMenu({
+                  id: item.id,
+                  scrollTop: listRef.current?.scrollTop ?? 0,
+                  x: e.clientX || rect.left + 12,
+                  y: e.clientY || rect.top + 24,
+                });
+              }}
+              onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing || busy) return;
+                if (
+                  e.key === "ContextMenu" ||
+                  (e.shiftKey && e.key === "F10")
+                ) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelected(item.id);
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setContextMenu({
+                    id: item.id,
+                    scrollTop: listRef.current?.scrollTop ?? 0,
+                    x: rect.left + 12,
+                    y: rect.top + 24,
+                  });
+                }
+              }}
               onClick={() => setSelected(item.id)}
               onDoubleClick={() => void perform(() => api("Paste", item.id))}
-              title="单击选择，双击粘贴到原应用"
+              title="单击选择，双击粘贴，右键收藏或删除"
             >
               <span className="clip-meta">
                 <span className="clip-kind">
@@ -456,6 +530,24 @@ export default function App() {
           </button>
         )}
       </main>
+      {contextMenu && menuEntry && !settings && !details && (
+        <EntryMenu
+          key={contextMenu.id}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          pinned={menuEntry.pinned}
+          busy={busy}
+          onClose={closeMenu}
+          onPin={() => {
+            closeMenu(true);
+            togglePin(menuEntry);
+          }}
+          onDelete={() => {
+            closeMenu(true);
+            deleteEntry(menuEntry.id);
+          }}
+        />
+      )}
       <div
         className="selection-actions"
         role="toolbar"
@@ -475,9 +567,7 @@ export default function App() {
           aria-label={entry?.pinned ? "取消收藏" : "收藏记录"}
           title={entry?.pinned ? "取消收藏" : "收藏记录"}
           disabled={busy || !entry}
-          onClick={() =>
-            entry && void perform(() => api("Pin", entry.id, !entry.pinned))
-          }
+          onClick={() => entry && togglePin(entry)}
         >
           <Star size={15} fill={entry?.pinned ? "currentColor" : "none"} />
         </button>
