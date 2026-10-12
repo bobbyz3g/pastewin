@@ -2,6 +2,10 @@
 
 Windows 本地文字与图片剪贴板工具，使用 **Wails v3.0.0-beta.25 + Go + React / TypeScript + SQLite**。
 
+## 许可证
+
+PasteWin 采用 [MIT 许可证](LICENSE)，允许使用、修改、分发和商业使用；分发时须保留版权声明和许可证。第三方依赖仍遵循各自的许可证。
+
 ## 直接体验
 
 双击 `bin\pastewin.exe`。
