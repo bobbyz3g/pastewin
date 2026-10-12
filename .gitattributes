@@ -1,0 +1,2 @@
+# Exclude the bundled Wails Android template from GitHub language statistics.
+build/android/** linguist-vendored
