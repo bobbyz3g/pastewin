@@ -2,6 +2,8 @@
 
 本文件适用于整个仓库。先遵循用户当前请求及更具体的目录指令；以下内容记录现有实现和默认约定，并不限制用户明确要求的功能扩展。产品行为、架构或开发命令变化后，同步更新本文件和 README。
 
+文档分工：`README.md` 为英文产品入口，`README.zh-CN.md` 为对应中文版；两者保持产品信息一致。开发、测试与实现说明见 `docs/development.md`，Windows 安装包构建及参数见 `docs/packaging.md`。代理约束保留在本文件，不写入面向用户的 README。
+
 ## 产品与当前范围
 
 - Windows 本地剪贴板工具，当前是可运行的原型，目标是常驻后台、快捷唤起、快速选择并粘贴历史。
@@ -80,7 +82,7 @@ wails3 dev
 ```powershell
 # 从仓库根目录执行
 wails3 build                 # 完整生产构建，包含绑定生成和前端构建
-wails3 task package          # NSIS 安装包，需要 NSIS 3；详见 README
+wails3 task package          # NSIS 安装包，需要 NSIS 3；详见 docs/packaging.md
 go test ./...
 go vet ./...
 npm --prefix frontend run format
