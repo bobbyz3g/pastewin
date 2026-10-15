@@ -43,17 +43,34 @@ func main() {
 	tray.SetIcon(trayIcon())
 	tray.SetTooltip("PasteWin · Ctrl+Shift+V")
 	menu := app.NewMenu()
-	menu.Add("打开 PasteWin").OnClick(func(_ *application.Context) { service.show() })
-	menu.Add("暂停 / 恢复记录").OnClick(func(_ *application.Context) {
+	openItem := menu.Add("打开 PasteWin").OnClick(func(_ *application.Context) { service.show() })
+	pauseItem := menu.Add("暂停 / 恢复记录").OnClick(func(_ *application.Context) {
 		if err := service.SetPaused(!service.Status().Paused); err != nil {
 			service.report(err)
 		}
 	})
 	menu.AddSeparator()
-	menu.Add("退出").OnClick(func(_ *application.Context) { app.Quit() })
+	quitItem := menu.Add("退出").OnClick(func(_ *application.Context) { app.Quit() })
 	tray.SetMenu(menu)
+	service.updateTrayLanguage = func(language string) {
+		application.InvokeSync(func() {
+			if language == "en" {
+				openItem.SetLabel("Open PasteWin")
+				pauseItem.SetLabel("Pause / Resume capture")
+				quitItem.SetLabel("Exit")
+			} else {
+				openItem.SetLabel("打开 PasteWin")
+				pauseItem.SetLabel("暂停 / 恢复记录")
+				quitItem.SetLabel("退出")
+			}
+
+		})
+	}
 	tray.OnClick(service.show)
 	app.Event.OnApplicationEvent(events.Common.ApplicationStarted, func(_ *application.ApplicationEvent) {
+		if language, err := service.Language(); err == nil {
+			service.updateTrayLanguage(language)
+		}
 		if err := app.GlobalShortcut.Register("Ctrl+Shift+V", service.show); err != nil {
 			service.stateMu.Lock()
 			service.hotkeyError = "快捷键已被占用，请从托盘打开面板"

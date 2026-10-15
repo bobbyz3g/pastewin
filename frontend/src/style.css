@@ -511,6 +511,26 @@ dialog::backdrop {
 .setting-row kbd {
   flex: none;
 }
+.setting-row > div {
+  min-width: 0;
+}
+.setting-row select {
+  flex: none;
+  max-width: 45%;
+  border: 1px solid #dedbe6;
+  border-radius: 6px;
+  padding: 7px;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+}
+.setting-row select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.preview-actions {
+  flex-wrap: wrap;
+}
 .storage-note {
   display: flex;
   gap: 9px;

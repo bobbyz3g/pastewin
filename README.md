@@ -4,7 +4,7 @@ English | [简体中文](README.zh-CN.md)
 
 PasteWin is a local clipboard history tool for Windows. Save copied text and images, then use a keyboard shortcut to find and paste them back into your application. Your history stays on your computer. No account is required.
 
-PasteWin is an early-stage project. The application and installer currently use Chinese UI text.
+PasteWin is an early-stage project. The application supports English and Simplified Chinese. The installer currently uses Chinese UI text.
 
 ## Features
 
@@ -47,7 +47,9 @@ PasteWin sends **Ctrl+V** only. It does not send Enter or submit a message. If n
 
 Right-click a record to favorite, unfavorite, or delete it. Use the content preview to inspect full text or an image. If a record contains both text and an image, the default action uses the text; the preview provides separate image actions. Search matches text only. Delete does not remove records while a dialog is open.
 
-Closing the panel keeps PasteWin running in the tray. Choose **退出** (Exit) in settings or the tray menu to stop it. **开机自启** (Start at sign-in) is off by default; when enabled, PasteWin starts in the tray without opening the panel. After moving a portable executable, enable startup again to register its new path. Windows startup settings or organization policies can still block automatic startup.
+To change the language, open **设置** (Settings) and select **English** or **简体中文** under **语言** (Language). The interface and tray menu update immediately, and your choice is saved for the next launch. The default is Simplified Chinese. Clipboard content is not translated; system diagnostics may use the Windows language.
+
+Closing the panel keeps PasteWin running in the tray. Choose **Quit app** in settings or **Exit** in the tray menu to stop it. **Start at sign-in** is off by default; when enabled, PasteWin starts in the tray without opening the panel. After moving a portable executable, enable startup again to register its new path. Windows startup settings or organization policies can still block automatic startup.
 
 ## Data and limitations
 

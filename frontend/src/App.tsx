@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { createPortal } from "react-dom";
 import {
   useCallback,
@@ -30,8 +31,8 @@ import { EntryMenu } from "./EntryMenu";
 import buildInfo from "../../build/windows/info.json";
 import "./style.css";
 
-const time = (value: number) =>
-  new Date(value).toLocaleTimeString("zh-CN", {
+const time = (value: number, language: string) =>
+  new Date(value).toLocaleTimeString(language, {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -49,12 +50,13 @@ function Picture({
   entry: Entry;
   thumbnail?: boolean;
 }) {
+  const { t } = useI18n();
   const [failed, setFailed] = useState(false);
   const src = imageURL(entry, thumbnail);
   useEffect(() => setFailed(false), [src]);
   return failed ? (
     <span className="image-unavailable" role="status">
-      图片无法读取，请刷新或重新选择
+      {t("图片无法读取，请刷新或重新选择")}
     </span>
   ) : (
     <img
@@ -62,7 +64,10 @@ function Picture({
         thumbnail ? "clip-thumbnail checkerboard" : "preview-image checkerboard"
       }
       src={src}
-      alt={`图片，${entry.imageWidth} × ${entry.imageHeight} 像素`}
+      alt={t("图片，{width} × {height} 像素", {
+        width: entry.imageWidth,
+        height: entry.imageHeight,
+      })}
       loading={thumbnail ? "lazy" : "eager"}
       decoding="async"
       draggable={false}
@@ -72,6 +77,7 @@ function Picture({
 }
 
 export default function App() {
+  const { t, language, setLanguage, translateError } = useI18n();
   const [contextMenu, setContextMenu] = useState<{
     id: number;
     x: number;
@@ -250,23 +256,23 @@ export default function App() {
     if (selected !== null)
       void perform(
         () => api("Copy", selected),
-        preview ? "预览：已模拟复制" : "已复制到剪贴板",
+        preview ? t("预览：已模拟复制") : t("已复制到剪贴板"),
       );
-  }, [selected, perform]);
+  }, [selected, perform, t]);
   const paste = useCallback(() => {
     if (selected !== null) void perform(() => api("Paste", selected));
-  }, [selected, perform]);
+  }, [selected, perform, t]);
   const deleteEntry = useCallback(
     (id: number) => {
-      void perform(() => api("Delete", id), "已删除记录");
+      void perform(() => api("Delete", id), t("已删除记录"));
     },
-    [perform],
+    [perform, t],
   );
   const togglePin = useCallback(
     (item: Pick<Entry, "id" | "pinned">) => {
       void perform(() => api("Pin", item.id, !item.pinned));
     },
-    [perform],
+    [perform, t],
   );
   const deleteSelected = useCallback(() => {
     if (selected !== null) deleteEntry(selected);
@@ -352,7 +358,7 @@ export default function App() {
       }}
     >
       <header className="titlebar">
-        <div className="drag-handle" title="拖动 PasteWin 窗口">
+        <div className="drag-handle" title={t("拖动 PasteWin 窗口")}>
           <PanelsTopLeft size={18} />
         </div>
         <div className="search-box">
@@ -361,39 +367,39 @@ export default function App() {
             ref={searchRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜索剪贴板…"
-            aria-label="搜索剪贴板"
+            placeholder={t("搜索剪贴板…")}
+            aria-label={t("搜索剪贴板")}
           />
           {query && (
-            <button aria-label="清空搜索" onClick={() => setQuery("")}>
+            <button aria-label={t("清空搜索")} onClick={() => setQuery("")}>
               <X size={13} />
             </button>
           )}
         </div>
         <button
           className="icon-button"
-          aria-label="设置"
-          title="设置"
+          aria-label={t("设置")}
+          title={t("设置")}
           onClick={() => setSettings(true)}
         >
           <Settings size={16} />
         </button>
         <button
           className="icon-button close-button"
-          aria-label="隐藏到托盘"
-          title="隐藏到托盘 · Esc"
+          aria-label={t("隐藏到托盘")}
+          title={t("隐藏到托盘 · Esc")}
           onClick={() => void api("Hide").catch(fail)}
         >
           <X size={16} />
         </button>
       </header>
-      <nav className="tabs" aria-label="历史分类">
+      <nav className="tabs" aria-label={t("历史分类")}>
         <button
           className={!pinned ? "active" : ""}
           aria-pressed={!pinned}
           onClick={() => setPinned(false)}
         >
-          全部 <span>{page.all}</span>
+          {t("全部")} <span>{page.all}</span>
         </button>
         <button
           className={pinned ? "active" : ""}
@@ -401,19 +407,21 @@ export default function App() {
           onClick={() => setPinned(true)}
         >
           <Star size={12} />
-          收藏 <span>{page.pinned}</span>
+          {t("收藏")} <span>{page.pinned}</span>
         </button>
-        <span className="panel-label">{preview ? "界面预览" : "PasteWin"}</span>
+        <span className="panel-label">
+          {preview ? t("界面预览") : "PasteWin"}
+        </span>
       </nav>
       {status?.hotkeyError && (
         <div className="warning" role="status">
-          {status.hotkeyError}
+          {translateError(status.hotkeyError)}
         </div>
       )}
       <main
         ref={listRef}
         className="clip-list"
-        aria-label="剪贴板历史"
+        aria-label={t("剪贴板历史")}
         aria-busy={loading}
         onScroll={() => {
           // A queued scroll event from revealing the card can arrive after opening.
@@ -425,23 +433,23 @@ export default function App() {
         }}
       >
         {loading ? (
-          <div className="empty-list">正在读取历史…</div>
+          <div className="empty-list">{t("正在读取历史…")}</div>
         ) : page.entries.length === 0 ? (
           <div className="empty-list">
             <Clipboard size={28} strokeWidth={1.3} />
             <strong>
               {query
-                ? "没有找到相关内容"
+                ? t("没有找到相关内容")
                 : pinned
-                  ? "还没有收藏"
-                  : "从第一次复制开始"}
+                  ? t("还没有收藏")
+                  : t("从第一次复制开始")}
             </strong>
             <p>
               {query
-                ? "换个关键词再试试"
+                ? t("换个关键词再试试")
                 : pinned
-                  ? "选中一条记录，点击下方星标。"
-                  : "复制文字或图片后，就能在这里随时找回。"}
+                  ? t("选中一条记录，点击下方星标。")
+                  : t("复制文字或图片后，就能在这里随时找回。")}
             </p>
             {!query && !pinned && <kbd>Ctrl + Shift + V</kbd>}
           </div>
@@ -484,7 +492,7 @@ export default function App() {
               }}
               onClick={() => setSelected(item.id)}
               onDoubleClick={() => void perform(() => api("Paste", item.id))}
-              title="单击选择，双击粘贴，右键收藏或删除"
+              title={t("单击选择，双击粘贴，右键收藏或删除")}
             >
               <span className="clip-meta">
                 <span className="clip-kind">
@@ -499,14 +507,14 @@ export default function App() {
                     <Star size={11} className="starred" fill="currentColor" />
                   )}
                 </span>
-                <time>{time(item.updatedAt)}</time>
+                <time>{time(item.updatedAt, language)}</time>
               </span>
               {item.hasImage && (
                 <>
                   <Picture entry={item} thumbnail />
                   <span className="image-info">
                     {imageInfo(item)}
-                    {item.characters > 0 ? " · 含文字" : ""}
+                    {item.characters > 0 ? t(" · 含文字") : ""}
                   </span>
                 </>
               )}
@@ -526,7 +534,7 @@ export default function App() {
             disabled={busy}
             onClick={() => void perform(more)}
           >
-            加载更多记录
+            {t("加载更多记录")}
           </button>
         )}
       </main>
@@ -551,12 +559,12 @@ export default function App() {
       <div
         className="selection-actions"
         role="toolbar"
-        aria-label="所选记录操作"
+        aria-label={t("所选记录操作")}
       >
         <button
           className="icon-button"
-          aria-label="查看内容"
-          title="查看内容"
+          aria-label={t("查看内容")}
+          title={t("查看内容")}
           disabled={!entry}
           onClick={() => setDetails(true)}
         >
@@ -564,8 +572,8 @@ export default function App() {
         </button>
         <button
           className={`icon-button ${entry?.pinned ? "starred" : ""}`}
-          aria-label={entry?.pinned ? "取消收藏" : "收藏记录"}
-          title={entry?.pinned ? "取消收藏" : "收藏记录"}
+          aria-label={entry?.pinned ? t("取消收藏") : t("收藏记录")}
+          title={entry?.pinned ? t("取消收藏") : t("收藏记录")}
           disabled={busy || !entry}
           onClick={() => entry && togglePin(entry)}
         >
@@ -573,8 +581,8 @@ export default function App() {
         </button>
         <button
           className="icon-button delete-button"
-          aria-label="删除记录"
-          title="删除记录 · Delete"
+          aria-label={t("删除记录")}
+          title={t("删除记录 · Delete")}
           aria-keyshortcuts="Delete"
           disabled={busy || !entry}
           onClick={deleteSelected}
@@ -586,10 +594,10 @@ export default function App() {
           className="copy-action"
           disabled={busy || !entry}
           onClick={copy}
-          title="复制 · Ctrl+Enter"
+          title={t("复制 · Ctrl+Enter")}
         >
           <Copy size={14} />
-          复制
+          {t("复制")}
         </button>
         <button
           className="paste-action"
@@ -597,12 +605,12 @@ export default function App() {
           onClick={paste}
           title={
             status?.canPaste
-              ? "粘贴到原应用 · Enter"
-              : "在目标应用中按 Ctrl+Shift+V 唤起后粘贴"
+              ? t("粘贴到原应用 · Enter")
+              : t("在目标应用中按 Ctrl+Shift+V 唤起后粘贴")
           }
         >
           <ClipboardPaste size={14} />
-          粘贴
+          {t("粘贴")}
           <CornerDownLeft size={12} />
         </button>
       </div>
@@ -610,21 +618,25 @@ export default function App() {
         <button
           className={`capture-toggle ${status?.paused ? "paused" : ""}`}
           disabled={busy || !status}
-          aria-label={status?.paused ? "恢复记录" : "暂停记录"}
-          title={status?.paused ? "已暂停，点击恢复" : "正在记录，点击暂停"}
+          aria-label={status?.paused ? t("恢复记录") : t("暂停记录")}
+          title={
+            status?.paused ? t("已暂停，点击恢复") : t("正在记录，点击暂停")
+          }
           onClick={() => void perform(() => api("SetPaused", !status?.paused))}
         >
           <span className="status-dot" />
-          {status?.paused ? "已暂停" : "记录中"}
+          {status?.paused ? t("已暂停") : t("记录中")}
         </button>
         <span aria-live="polite">
-          {page.total} 条{query ? "匹配" : "记录"}
+          {t(query ? "{count} 条匹配" : "{count} 条记录", {
+            count: page.total.toLocaleString(language),
+          })}
         </span>
         <span
           className="shortcut-hint"
-          title="方向键选择，Enter 粘贴，Delete 删除，Esc 隐藏"
+          title={t("方向键选择，Enter 粘贴，Delete 删除，Esc 隐藏")}
         >
-          ↑ ↓ <span>选择</span>
+          ↑ ↓ <span>{t("选择")}</span>
         </span>
       </footer>
       <dialog
@@ -635,10 +647,10 @@ export default function App() {
         aria-labelledby="preview-title"
       >
         <div className="dialog-heading">
-          <h2 id="preview-title">内容预览</h2>
+          <h2 id="preview-title">{t("内容预览")}</h2>
           <button
             className="icon-button"
-            aria-label="关闭预览"
+            aria-label={t("关闭预览")}
             onClick={() => setDetails(false)}
           >
             <X size={18} />
@@ -646,8 +658,8 @@ export default function App() {
         </div>
         <div className="preview-meta">
           {entry
-            ? `${entry.hasImage ? imageInfo(entry) : `${entry.characters.toLocaleString()} 字符`} · ${time(entry.updatedAt)}`
-            : "正在读取…"}
+            ? `${entry.hasImage ? imageInfo(entry) : t("{count} 字符", { count: entry.characters.toLocaleString(language) })} · ${time(entry.updatedAt, language)}`
+            : t("正在读取…")}
         </div>
         <div className="preview-content">
           {details && entry?.hasImage && <Picture entry={entry} />}
@@ -664,7 +676,9 @@ export default function App() {
             onClick={copy}
           >
             <Copy size={14} />
-            {entry?.hasImage && entry.characters > 0 ? "复制文字" : "复制"}
+            {entry?.hasImage && entry.characters > 0
+              ? t("复制文字")
+              : t("复制")}
           </button>
           <button
             className="primary"
@@ -676,8 +690,8 @@ export default function App() {
           >
             <ClipboardPaste size={14} />
             {entry?.hasImage && entry.characters > 0
-              ? "粘贴文字"
-              : "粘贴到原应用"}
+              ? t("粘贴文字")
+              : t("粘贴到原应用")}
           </button>
         </div>
         {entry?.hasImage && entry.characters > 0 && (
@@ -688,12 +702,12 @@ export default function App() {
               onClick={() =>
                 void perform(
                   () => api("CopyImage", entry.id),
-                  preview ? "预览：已模拟复制图片" : "已复制图片",
+                  preview ? t("预览：已模拟复制图片") : t("已复制图片"),
                 )
               }
             >
               <Copy size={14} />
-              复制图片
+              {t("复制图片")}
             </button>
             <button
               className="primary"
@@ -704,7 +718,7 @@ export default function App() {
               }}
             >
               <ClipboardPaste size={14} />
-              粘贴图片
+              {t("粘贴图片")}
             </button>
           </div>
         )}
@@ -717,8 +731,10 @@ export default function App() {
             role={notice.error ? "alert" : "status"}
           >
             {notice.error ? <X size={17} /> : <Check size={17} />}
-            <span>{notice.text}</span>
-            <button aria-label="关闭提示" onClick={() => setNotice(null)}>
+            <span>
+              {notice.error ? translateError(notice.text) : notice.text}
+            </span>
+            <button aria-label={t("关闭提示")} onClick={() => setNotice(null)}>
               <X size={15} />
             </button>
           </div>,
@@ -735,15 +751,37 @@ export default function App() {
         aria-labelledby="settings-title"
       >
         <div className="dialog-heading">
-          <h2 id="settings-title">设置与存储</h2>
-          <button aria-label="关闭设置" onClick={() => setSettings(false)}>
+          <h2 id="settings-title">{t("设置")}</h2>
+          <button aria-label={t("关闭设置")} onClick={() => setSettings(false)}>
             <X size={20} />
           </button>
         </div>
         <div className="setting-row">
           <div>
-            <strong>记录剪贴板</strong>
-            <p>只记录程序运行期间新复制的文字和图片。</p>
+            <label htmlFor="language-select">
+              <strong>{t("语言")}</strong>
+            </label>
+          </div>
+          <select
+            id="language-select"
+            value={language}
+            disabled={busy}
+            onChange={(event) => {
+              const value = event.target.value;
+              void perform(async () => {
+                await setLanguage(value);
+                setNotice(null);
+              });
+            }}
+          >
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div className="setting-row">
+          <div>
+            <strong>{t("自动记录")}</strong>
+            <p>{t("运行时保存新复制的文字和图片。")}</p>
           </div>
           <button
             className="secondary"
@@ -752,23 +790,24 @@ export default function App() {
               void perform(() => api("SetPaused", !status?.paused))
             }
           >
-            {status?.paused ? "恢复记录" : "暂停记录"}
+            {status?.paused ? t("继续记录") : t("暂停记录")}
           </button>
         </div>
         <div className="setting-row">
           <div>
-            <strong>全局快捷键</strong>
-            <p>在当前应用中唤起，选中后粘贴回原处。</p>
+            <strong>{t("打开面板")}</strong>
           </div>
           <kbd>Ctrl Shift V</kbd>
         </div>
         <div className="setting-row">
           <div>
-            <strong id="autostart-label">开机自启</strong>
-            <p id="autostart-description">登录 Windows 后在托盘后台运行。</p>
+            <strong id="autostart-label">{t("开机启动")}</strong>
+            <p id="autostart-description">{t("自动运行，不弹出窗口。")}</p>
             {autoStartError && (
               <p className="setting-error" role="alert">
-                {autoStartError}，请重新打开设置重试。
+                {t("{error}。请关闭设置后重试。", {
+                  error: translateError(autoStartError),
+                })}
               </p>
             )}
           </div>
@@ -785,10 +824,10 @@ export default function App() {
                 setAutoStart(enabled);
                 notify(
                   preview
-                    ? "预览：已模拟开机自启设置"
+                    ? t("仅供预览，未更改开机启动。")
                     : enabled
-                      ? "已开启开机自启"
-                      : "已关闭开机自启",
+                      ? t("已开启开机启动")
+                      : t("已关闭开机启动"),
                 );
               })
             }
@@ -799,45 +838,44 @@ export default function App() {
             <span>
               {autoStart === null
                 ? autoStartError
-                  ? "不可用"
-                  : "读取中"
+                  ? t("读取失败")
+                  : t("读取中")
                 : autoStart
-                  ? "已开启"
-                  : "已关闭"}
+                  ? t("已开启")
+                  : t("已关闭")}
             </span>
           </button>
         </div>
         <div className="storage-note">
           <ShieldCheck size={20} />
           <div>
-            <strong>所有历史都保存在本机</strong>
-            <p>
-              最多保留 500 条；文本每条 1 MiB，图片每张 1600 万像素、编码后 20
-              MiB，图片总量 256
-              MiB。收藏不会自动清理。使用本地明文数据库，请按需暂停记录敏感内容。
-            </p>
-            <code>{status?.databasePath}</code>
+            <strong>{t("本机保存")}</strong>
+            <p>{t("最多保存500条，收藏不自动删除。")}</p>
+            <p>{t("内容未加密，复制隐私信息前请暂停。")}</p>
+            <code>
+              {status?.databasePath &&
+                (preview ? t("界面预览") : status.databasePath)}
+            </code>
           </div>
         </div>
         <section className="about-section" aria-labelledby="about-title">
           <div className="about-heading">
-            <h3 id="about-title">关于 PasteWin</h3>
+            <h3 id="about-title">{t("关于")}</h3>
             <span className="app-version">
-              版本 {buildInfo.fixed.file_version}
+              {t("版本 {version}", { version: buildInfo.fixed.file_version })}
             </span>
           </div>
-          <p>Windows 本地剪贴板工具</p>
-          <p>记录文字和图片，搜索文字、收藏内容，快速粘贴回原应用。</p>
+          <p>{t("保存复制过的文字和图片。")}</p>
         </section>
         <div className="dialog-footer">
           {confirmClear ? (
             <>
-              <span>清除未收藏的记录？</span>
+              <span>{t("删除所有未收藏记录？无法恢复。")}</span>
               <button
                 className="secondary"
                 onClick={() => setConfirmClear(false)}
               >
-                取消
+                {t("取消")}
               </button>
               <button
                 className="danger"
@@ -846,10 +884,10 @@ export default function App() {
                   void perform(async () => {
                     await api("ClearUnpinned");
                     setConfirmClear(false);
-                  }, "已清除未收藏记录")
+                  }, t("已删除未收藏记录"))
                 }
               >
-                确认清除
+                {t("确认删除")}
               </button>
             </>
           ) : (
@@ -859,13 +897,13 @@ export default function App() {
                 onClick={() => setConfirmClear(true)}
               >
                 <Trash2 size={15} />
-                清除未收藏记录
+                {t("清理记录")}
               </button>
               <button
                 className="secondary"
                 onClick={() => void api("Quit").catch(fail)}
               >
-                退出 PasteWin
+                {t("退出应用")}
               </button>
             </>
           )}

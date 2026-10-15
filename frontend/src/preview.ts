@@ -57,6 +57,12 @@ let paused = false;
 let autoStart = false;
 const changed = () => window.dispatchEvent(new CustomEvent("history:changed"));
 export const demo = {
+  async Language() {
+    return localStorage.getItem("pastewin.preview.language") ?? "zh-CN";
+  },
+  async SetLanguage(language: string) {
+    localStorage.setItem("pastewin.preview.language", language);
+  },
   async List(query: string, pinned: boolean, offset: number) {
     const filtered = entries.filter(
       (e) =>

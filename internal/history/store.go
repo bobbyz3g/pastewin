@@ -275,3 +275,26 @@ func (s *Store) SetPaused(paused bool) error {
 	_, err := s.db.Exec(`INSERT INTO settings(key,value) VALUES('paused',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, value)
 	return err
 }
+
+// Language returns the saved UI language. Older databases default to Chinese.
+func (s *Store) Language() (string, error) {
+	var value string
+	err := s.db.QueryRow(`SELECT value FROM settings WHERE key='language'`).Scan(&value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "zh-CN", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if value != "en" && value != "zh-CN" {
+		return "zh-CN", nil
+	}
+	return value, nil
+}
+func (s *Store) SetLanguage(language string) error {
+	if language != "en" && language != "zh-CN" {
+		return errors.New("Unsupported language")
+	}
+	_, err := s.db.Exec(`INSERT INTO settings(key,value) VALUES('language',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, language)
+	return err
+}

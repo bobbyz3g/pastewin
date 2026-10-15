@@ -25,24 +25,25 @@ type Status struct {
 }
 
 type ClipboardService struct {
-	app            *application.App
-	window         *application.WebviewWindow
-	store          *history.Store
-	monitor        *native.Monitor
-	cancel         context.CancelFunc
-	ctx            context.Context
-	wg             sync.WaitGroup
-	opMu           sync.Mutex
-	stateMu        sync.Mutex
-	paused         bool
-	ignoreSequence uint32
-	target         uintptr
-	hotkeyError    string
-	databasePath   string
-	pasting        bool
-	captureEpoch   uint64
-	lastCaptured   uint32
-	captures       chan captureJob
+	app                *application.App
+	updateTrayLanguage func(string)
+	window             *application.WebviewWindow
+	store              *history.Store
+	monitor            *native.Monitor
+	cancel             context.CancelFunc
+	ctx                context.Context
+	wg                 sync.WaitGroup
+	opMu               sync.Mutex
+	stateMu            sync.Mutex
+	paused             bool
+	ignoreSequence     uint32
+	target             uintptr
+	hotkeyError        string
+	databasePath       string
+	pasting            bool
+	captureEpoch       uint64
+	lastCaptured       uint32
+	captures           chan captureJob
 }
 
 func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
@@ -254,4 +255,15 @@ func (s *ClipboardService) show() {
 	s.window.Show()
 	s.window.Focus()
 	s.app.Event.Emit("panel:shown", reset)
+}
+
+func (s *ClipboardService) Language() (string, error) { return s.store.Language() }
+func (s *ClipboardService) SetLanguage(language string) error {
+	if err := s.store.SetLanguage(language); err != nil {
+		return err
+	}
+	if s.updateTrayLanguage != nil {
+		s.updateTrayLanguage(language)
+	}
+	return nil
 }

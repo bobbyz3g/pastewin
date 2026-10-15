@@ -41,6 +41,10 @@ export function Hide(): $CancellablePromise<void> {
     return $Call.ByID(360938931);
 }
 
+export function Language(): $CancellablePromise<string> {
+    return $Call.ByID(3464397941);
+}
+
 export function List(query: string, pinned: boolean, offset: number): $CancellablePromise<history$0.Page> {
     return $Call.ByID(3681129803, query, pinned, offset);
 }
@@ -63,6 +67,10 @@ export function Quit(): $CancellablePromise<void> {
 
 export function SetAutoStart(enabled: boolean): $CancellablePromise<boolean> {
     return $Call.ByID(601388146, enabled);
+}
+
+export function SetLanguage(language: string): $CancellablePromise<void> {
+    return $Call.ByID(939241143, language);
 }
 
 export function SetPaused(paused: boolean): $CancellablePromise<void> {

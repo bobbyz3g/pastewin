@@ -1,3 +1,4 @@
+import { useI18n } from "./i18n";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Star, Trash2 } from "lucide-react";
@@ -19,6 +20,7 @@ export function EntryMenu({
   onPin: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   const menuRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const menu = menuRef.current!;
@@ -51,7 +53,7 @@ export function EntryMenu({
       ref={menuRef}
       className="entry-menu"
       role="menu"
-      aria-label="记录操作"
+      aria-label={t("记录操作")}
       onContextMenu={(e) => e.preventDefault()}
       onKeyDown={(e) => {
         // Menu keys must not also delete, navigate or paste in the history list.
@@ -93,7 +95,7 @@ export function EntryMenu({
     >
       <button role="menuitem" disabled={busy} onClick={onPin}>
         <Star size={14} fill={pinned ? "currentColor" : "none"} />
-        {pinned ? "取消收藏" : "收藏"}
+        {pinned ? t("取消收藏") : t("收藏")}
       </button>
       <button
         role="menuitem"
@@ -102,7 +104,7 @@ export function EntryMenu({
         onClick={onDelete}
       >
         <Trash2 size={14} />
-        删除
+        {t("删除")}
       </button>
     </div>,
     document.body,

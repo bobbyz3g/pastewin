@@ -38,6 +38,8 @@ export const imageURL = (entry: Entry, thumbnail = false) =>
     : `/history-image/${entry.id}/${thumbnail ? "thumbnail" : "image"}.png`;
 
 interface API {
+  Language(): Promise<string>;
+  SetLanguage(language: string): Promise<void>;
   List(query: string, pinned: boolean, offset: number): Promise<Page>;
   Get(id: number): Promise<Entry>;
   Pin(id: number, pinned: boolean): Promise<void>;
