@@ -27,7 +27,9 @@ The filename version comes from `fixed.file_version` in [info.json](../build/win
 
 The Chinese-language wizard installs for the current user, using `%LOCALAPPDATA%\Programs\PasteWin` by default. It allows a different directory and independent desktop and Start menu shortcut choices. If WebView2 is missing, its bootstrapper needs internet access.
 
-An upgrade reuses the registered directory and shortcut choices, which the user can change. If the executable is running, the installer asks the user to exit and retry. It does not terminate the process. A copy failure triggers an attempt to restore the old executable.
+The finish page includes a checked-by-default “启动 PasteWin” option. Clicking Finish launches the installed executable when selected; clearing it leaves the application closed. Silent installation does not launch the application.
+
+An upgrade reuses the registered directory and shortcut choices, which the user can change. If the executable is in use, the installer offers to close the matching PasteWin process and continue. It checks the full executable path and requests normal shutdown through the hidden main-thread window in Wails v3.0.0-beta.25, waiting up to ten seconds. It does not forcibly terminate an unresponsive process or close another installation. If shutdown or file access fails, the user can retry or cancel; replacement requires a successful write-access check. A copy failure triggers an attempt to restore the old executable.
 
 Changing the install directory removes only the registered old program and uninstall files. Unregistered portable copies are not scanned or removed. Installing into a portable copy's directory can replace that executable.
 
@@ -51,6 +53,6 @@ The installer accepts `/S`, `/DESKTOP=0|1`, `/STARTMENU=0|1`, and `/D=<directory
 powershell -NoProfile -File build/windows/test-installer.ps1 -NsisPath 'C:\Tools\NSIS\makensis.exe'
 ```
 
-The script uses a random application identifier, isolated directories, a dummy executable, and isolated startup registry keys. It checks installation, same-directory upgrades, directory migration, locked files, shortcut choices, startup migration, uninstall, and protection of separate portable copies. It does not use the real clipboard database.
+The script uses a random application identifier, isolated directories, dummy executables, and isolated startup registry keys. It checks installation, same-directory upgrades, directory migration, locked files, shortcut choices, startup migration, uninstall, and protection of separate portable copies. A clipboard-free window fixture checks normal shutdown, exact executable-path matching, replacement after shutdown, silent-install refusal, and the timeout for an unresponsive application. It does not use the real clipboard database.
 
-The automated checks complement a production installer build and visual checks of the directory and shortcut wizard pages. Windows sign-in behavior requires a separate session-level check.
+The automated checks complement a production installer build and visual checks of the directory, shortcut, and finish wizard pages. Recheck the hidden-window shutdown contract when upgrading Wails. Windows sign-in behavior requires a separate session-level check.

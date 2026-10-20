@@ -22,9 +22,9 @@ PasteWin runs on **Windows 10/11** and requires **Microsoft Edge WebView2 Runtim
 [Build from source](#build-from-source) to produce `bin/pastewin.exe`, or [build an installer](docs/packaging.md) to produce `bin/pastewin-<version>-<arch>-setup.exe`.
 
 - **Portable executable:** run `pastewin.exe`. History is stored in your Windows user profile, not beside the executable.
-- **Installer:** run the setup executable and choose an installation directory and optional desktop and Start menu shortcuts. The default directory is `%LOCALAPPDATA%\Programs\PasteWin`. Installation applies to the current user. If WebView2 is missing, the installer runs Microsoft's bootstrapper, which requires internet access.
+- **Installer:** run the setup executable and choose an installation directory and optional desktop and Start menu shortcuts. The default directory is `%LOCALAPPDATA%\Programs\PasteWin`. Installation applies to the current user. The finish page offers a checked-by-default option to launch PasteWin when you click Finish. If WebView2 is missing, the installer runs Microsoft's bootstrapper, which requires internet access.
 
-Exit PasteWin through settings or the tray menu before upgrading. Upgrades and uninstall preserve clipboard history. The executable and installer are currently unsigned.
+When upgrading a running installation, click OK in the installer prompt to close that copy of PasteWin and continue. If the application cannot exit, the installer stops replacing files and offers a retry. Exit PasteWin through settings or the tray before uninstalling or replacing a portable executable manually. Upgrades and uninstall preserve clipboard history. The executable and installer are currently unsigned.
 
 ## Quick start
 

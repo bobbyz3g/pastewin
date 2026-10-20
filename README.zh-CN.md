@@ -22,9 +22,9 @@ PasteWin 支持 **Windows 10/11**，需要 **Microsoft Edge WebView2 Runtime**�
 可以[从源码构建](#从源码构建)生成 `bin/pastewin.exe`，或[构建安装包](docs/packaging.md)生成 `bin/pastewin-<version>-<arch>-setup.exe`。
 
 - **便携版**：直接运行 `pastewin.exe`。历史保存在 Windows 用户目录中，不在 EXE 所在目录中。
-- **安装版**：运行安装包，选择安装目录和可选的桌面、开始菜单快捷方式。默认目录为 `%LOCALAPPDATA%\Programs\PasteWin`，仅为当前用户安装。如果缺少 WebView2，安装程序会运行微软引导程序，需要联网。
+- **安装版**：运行安装包，选择安装目录和可选的桌面、开始菜单快捷方式。默认目录为 `%LOCALAPPDATA%\Programs\PasteWin`，仅为当前用户安装。完成页提供默认勾选的“启动 PasteWin”选项，点击“完成”后启动。如果缺少 WebView2，安装程序会运行微软引导程序，需要联网。
 
-升级前，请从托盘菜单或设置中退出 PasteWin。升级和卸载均保留剪贴板历史。当前 EXE 和安装包尚未进行代码签名。
+升级时如果 PasteWin 正在运行，点击安装器提示中的“确定”，即可关闭对应程序并继续。程序无法退出时，安装器停止替换文件并允许重试。卸载或手动替换便携版前，请从托盘菜单或设置中退出 PasteWin。升级和卸载均保留剪贴板历史。当前 EXE 和安装包尚未进行代码签名。
 
 ## 快速开始
 

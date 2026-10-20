@@ -105,10 +105,12 @@ npm --prefix frontend test       # 本机 Edge 无头浏览器回归，合成数
 - `build/windows/package.ps1` 在 `.work/package-<arch>` 生产构建并生成 `bin/pastewin-<version>-<arch>-setup.exe`。支持 `-NsisPath`、`-Arch`、`-OutputDir`，版本取自 `build/windows/info.json`。
 - `build/windows/nsis/project.nsi` 是项目定制脚本，不依赖旧的 `wails_tools.nsh` 模板；不要用 Wails 模板生成命令覆盖。仅当前用户安装，HKCU 卸载登记标识为 `dev.pastewin.app`。
 - 默认目录为 `%LOCALAPPDATA%\Programs\PasteWin`；中文向导可修改目录，独立选择桌面/开始菜单快捷方式。升级沿用旧目录和选择，用户仍可更改。
-- 替换前检查 EXE 写权限，运行中提示退出后重试；静默安装直接返回非零。复制失败尝试恢复旧 EXE；目录迁移只删除登记位置的程序及卸载文件。禁止递归删除安装目录或用户数据。
+- 完成页提供默认勾选的“启动 PasteWin”选项，点击“完成”后按选择启动安装目录中的程序；取消勾选或静默安装不启动。
+- 替换前检查 EXE 写权限，运行中提示确认关闭并继续；确认后按完整 EXE 路径匹配 Wails 隐藏主线程窗口，发送正常退出请求并最多等待 10 秒，再检查写权限。不强杀、不关闭其他目录副本；失败可重试或取消。静默安装不关闭程序，文件占用时直接返回非零。卸载仍要求先退出。复制失败尝试恢复旧 EXE；目录迁移只删除登记位置的程序及卸载文件。禁止递归删除安装目录或用户数据。
+- `build/windows/nsis/close-running.nsh` 依赖 Wails v3.0.0-beta.25 隐藏主线程窗口的 `WM_CLOSE` → `App.Quit` 行为，升级 Wails 时须复核；不能改为关闭可见面板（只会隐藏）。
 - 升级和卸载保留剪贴板数据库及 WebView 配置；未登记的其他便携版副本不会扫描删除。首次安装可选择便携版所在目录来替换其 EXE。
 - 安装不默认开启自启；目录迁移只更新指向旧安装 EXE 的自启命令，卸载只删除指向被卸载 EXE 的自启命令，保留其他副本的登记。测试用 `RUN_KEY` 覆盖到随机隔离键，不写真实启动项。
-- `build/windows/test-installer.ps1 -NsisPath <makensis.exe>` 使用随机应用标识、独立目录和虚拟 EXE 测试安装/同目录升级/目录迁移/文件占用/快捷方式/卸载，不能操作真实剪贴板库。
+- `build/windows/test-installer.ps1 -NsisPath <makensis.exe>` 使用随机应用标识、独立目录和虚拟 EXE 测试安装/同目录升级/目录迁移/文件占用/快捷方式/卸载，以及无剪贴板功能的窗口程序测试正常退出、路径隔离、退出后替换和超时，不能操作真实剪贴板库。
 - 安装变更须通过上述行为测试、安装包构建，并检查目录选择和快捷方式向导页面。已签名发布流程尚未配置，不声称安装包已签名。
 
 ## 数据与工作边界

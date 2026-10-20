@@ -19,7 +19,7 @@ Unicode true
 !define RUN_KEY "Software\Microsoft\Windows\CurrentVersion\Run"
 !endif
 !ifndef VERSION
-!define VERSION "0.3.0"
+!define VERSION "0.3.2"
 !endif
 !ifndef ARCH
 !define ARCH "amd64"
@@ -49,6 +49,8 @@ VIAddVersionKey "LegalCopyright" "Copyright 2026 PasteWin"
 !insertmacro MUI_PAGE_DIRECTORY
 Page custom ShortcutPage ShortcutLeave
 !insertmacro MUI_PAGE_INSTFILES
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE}"
+!define MUI_FINISHPAGE_RUN_TEXT "启动 PasteWin"
 !insertmacro MUI_PAGE_FINISH
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
@@ -152,6 +154,7 @@ FunctionEnd
 
 ; Rename alone can succeed for a running image. Test write access first so an
 ; upgrade cannot strand a still-running old version under another filename.
+!include "close-running.nsh"
 !macro CheckWritable PATH PREFIX
   ${If} ${FileExists} "${PATH}"
     ${Do}
@@ -160,7 +163,19 @@ FunctionEnd
         System::Call 'kernel32::CloseHandle(p r0)'
         ${ExitDo}
       ${EndIf}
-      MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "无法替换程序文件：$\r$\n${PATH}$\r$\n请从托盘菜单退出 PasteWin 后重试，并确认目录可写。" /SD IDCANCEL IDRETRY ${PREFIX}retry
+!if "${PREFIX}" != "uninstall"
+      MessageBox MB_OKCANCEL|MB_ICONQUESTION "程序文件正在使用或无法写入：$\r$\n${PATH}$\r$\n点击“确定”关闭此目录中正在运行的 PasteWin 并继续安装。" /SD IDCANCEL IDCANCEL ${PREFIX}cancel
+      Push "${PATH}"
+      Call CloseRunningApp
+      Pop $0
+      ${If} $0 = 0
+        Goto ${PREFIX}retry
+      ${EndIf}
+      MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "未能关闭程序或访问文件。请确认程序可以响应、安装目录可写，并使用相同用户权限重试。" /SD IDCANCEL IDRETRY ${PREFIX}retry
+      ${PREFIX}cancel:
+!else
+      MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "无法删除程序文件：$\r$\n${PATH}$\r$\n请从托盘菜单退出 PasteWin 后重试，并确认目录可写。" /SD IDCANCEL IDRETRY ${PREFIX}retry
+!endif
       SetErrorLevel 5
       Quit
       ${PREFIX}retry:
@@ -194,16 +209,19 @@ FunctionEnd
 Section "安装"
   InitPluginsDir
   Call EnsureWebView
-  !insertmacro CheckWritable "$INSTDIR\${EXE}" target
   ${If} $OldDir != ""
   ${AndIf} $OldDir != $INSTDIR
-    !insertmacro CheckWritable "$OldDir\${EXE}" source
     ; Never overwrite an unrelated executable at the new destination.
     ${If} ${FileExists} "$INSTDIR\${EXE}"
       MessageBox MB_OK|MB_ICONSTOP "目标目录已有 pastewin.exe。请选择空目录或原安装目录。" /SD IDOK
       SetErrorLevel 80
       Quit
     ${EndIf}
+  ${EndIf}
+  !insertmacro CheckWritable "$INSTDIR\${EXE}" target
+  ${If} $OldDir != ""
+  ${AndIf} $OldDir != $INSTDIR
+    !insertmacro CheckWritable "$OldDir\${EXE}" source
   ${EndIf}
   ${If} $OldDir == ""
     StrCpy $OldDir $INSTDIR

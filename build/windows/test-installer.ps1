@@ -106,6 +106,74 @@ try {
     Run-Installer $uninstaller "/S _?=$newDir"
     Assert ((Get-ItemPropertyValue $runPath $testId) -eq $oldCommand) 'Uninstall changed portable startup'
     Write-Host 'PASS: startup migration, cleanup and portable-copy ownership'
+
+    # Exercise the exact shutdown routine used after interactive confirmation,
+    # without touching the real app, its single-instance identity or clipboard.
+    $fixture = Join-Path $testRoot 'running-app.exe'
+    & go build -o $fixture "$repo\build\windows\testdata\running-app"
+    if ($LASTEXITCODE -ne 0) { throw 'Running-app fixture build failed.' }
+    $driverSource = @'
+Unicode true
+!include "LogicLib.nsh"
+!include "FileFunc.nsh"
+!include "close-running.nsh"
+OutFile "close-driver.exe"
+RequestExecutionLevel user
+SilentInstall silent
+Section
+  ${GetParameters} $0
+  Push $0
+  Call CloseRunningApp
+  Pop $0
+  SetErrorLevel $0
+SectionEnd
+'@
+    $driverScript = Join-Path $testRoot 'close-driver.nsi'
+    [IO.File]::WriteAllText($driverScript, $driverSource)
+    & $NsisPath '/V2' '/INPUTCHARSET' 'UTF8' "/X!addincludedir $repo\build\windows\nsis" $driverScript
+    if ($LASTEXITCODE -ne 0) { throw 'Close driver compilation failed.' }
+    $driver = Join-Path $testRoot 'close-driver.exe'
+    $running = @()
+    try {
+        foreach ($dir in @($oldDir, $newDir)) {
+            Copy-Item $fixture "$dir\pastewin.exe"
+            $running += Start-Process "$dir\pastewin.exe" -WindowStyle Hidden -PassThru
+            $deadline = [DateTime]::UtcNow.AddSeconds(10)
+            while (!(Test-Path "$dir\ready") -and [DateTime]::UtcNow -lt $deadline) {
+                Start-Sleep -Milliseconds 50
+            }
+            Assert (Test-Path "$dir\ready") 'Fixture window did not become ready'
+        }
+        Run-Installer $driver "$testRoot\missing\pastewin.exe" 1
+        Assert (!$running[0].HasExited -and !$running[1].HasExited) 'Nonmatching app was closed'
+        Run-Installer $v2 "/S /D=$oldDir" 5
+        Assert (!$running[0].HasExited) 'Silent install closed a running app'
+        Run-Installer $driver "$oldDir\pastewin.exe"
+        Assert ($running[0].WaitForExit(1000)) 'Matching app did not exit'
+        Assert ((Get-Content "$oldDir\closed" -Raw) -eq 'graceful') 'Shutdown bypassed normal close handling'
+        Assert (!$running[1].HasExited) 'Another installation was closed'
+        Run-Installer $v2 "/S /DESKTOP=0 /STARTMENU=0 /D=$oldDir"
+        Assert ((Get-Content "$oldDir\pastewin.exe" -Raw) -eq 'version-two') 'Replacement after shutdown failed'
+        Run-Installer $driver "$newDir\pastewin.exe"
+        Assert ($running[1].WaitForExit(1000)) 'Second fixture did not exit'
+        Remove-Item "$newDir\ready", "$newDir\closed"
+        $running += Start-Process "$newDir\pastewin.exe" -ArgumentList '--ignore-close' -WindowStyle Hidden -PassThru
+        $deadline = [DateTime]::UtcNow.AddSeconds(10)
+        while (!(Test-Path "$newDir\ready") -and [DateTime]::UtcNow -lt $deadline) {
+            Start-Sleep -Milliseconds 50
+        }
+        Assert (Test-Path "$newDir\ready") 'Unresponsive fixture did not become ready'
+        Run-Installer $driver "$newDir\pastewin.exe" 1
+        Assert (!$running[2].HasExited) 'Unresponsive app was forcibly terminated'
+        Write-Host 'PASS: graceful close, exact executable path, other-copy protection, bounded timeout'
+    } finally {
+        foreach ($process in $running) {
+            if (!$process.HasExited) {
+                Stop-Process -Id $process.Id -Force
+                $process.WaitForExit()
+            }
+        }
+    }
 } finally {
     # These names include a fresh GUID and are exclusively owned by this test.
     Remove-Item -LiteralPath $desktopLink, $menuLink -Force -ErrorAction SilentlyContinue
