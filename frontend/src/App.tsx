@@ -319,6 +319,8 @@ export default function App() {
           ),
         );
         setSelected(page.entries[next]?.id ?? null);
+        if (page.entries.length > 0)
+          listRef.current?.focus({ preventScroll: true });
       }
       if (e.key === "Enter") {
         const target = e.target as HTMLElement;
@@ -393,7 +395,7 @@ export default function App() {
         </button>
       </header>
       <nav className="tabs" aria-label={t("历史分类")}>
-        <div className="tab-segment">
+        <div className={`tab-segment ${pinned ? "show-pinned" : ""}`}>
           <button
             className={!pinned ? "active" : ""}
             aria-pressed={!pinned}
@@ -439,6 +441,7 @@ export default function App() {
       )}
       <main
         ref={listRef}
+        tabIndex={-1}
         className="clip-list"
         aria-label={t("剪贴板历史")}
         aria-busy={loading}
@@ -747,6 +750,7 @@ export default function App() {
         )}
       <dialog
         ref={dialogRef}
+        className="settings-dialog"
         onCancel={() => setSettings(false)}
         onClose={() => {
           setSettings(false);
@@ -850,41 +854,6 @@ export default function App() {
             </span>
           </button>
         </div>
-        <details className="keyboard-help">
-          <summary>{t("快捷操作")}</summary>
-          <dl>
-            <div>
-              <dt>{t("选择")}</dt>
-              <dd>
-                <kbd>↑ ↓</kbd>
-              </dd>
-            </div>
-            <div>
-              <dt>{t("粘贴")}</dt>
-              <dd>
-                <kbd>Enter</kbd>
-              </dd>
-            </div>
-            <div>
-              <dt>{t("复制")}</dt>
-              <dd>
-                <kbd>Ctrl Enter</kbd>
-              </dd>
-            </div>
-            <div>
-              <dt>{t("删除")}</dt>
-              <dd>
-                <kbd>Delete</kbd>
-              </dd>
-            </div>
-            <div>
-              <dt>{t("隐藏到托盘")}</dt>
-              <dd>
-                <kbd>Esc</kbd>
-              </dd>
-            </div>
-          </dl>
-        </details>
         <div className="storage-note">
           <ShieldCheck size={20} />
           <div>

@@ -85,6 +85,58 @@ test.beforeEach(async ({ page }) => {
   await expect(selected(page)).toContainText("记录 1 中文测试");
 });
 
+test("category switching preserves counts and geometry while clearing stale actions", async ({
+  page,
+}) => {
+  const tabs = page.locator(".tab-segment button");
+  const geometry = () =>
+    tabs.evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const { x, width } = button.getBoundingClientRect();
+        return { x, width };
+      }),
+    );
+  const before = await geometry();
+  await page.evaluate(() => {
+    window.historyTest.hold = true;
+  });
+  await tabs.nth(1).click();
+  await expect
+    .poll(() => page.evaluate(() => window.historyTest.pending.length))
+    .toBe(1);
+  await expect(tabs.nth(0)).toHaveText("全部 65");
+  await expect(tabs.nth(1)).toHaveText("收藏 22");
+  await expect(selected(page)).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "粘贴", exact: true }),
+  ).toBeDisabled();
+  expect(await geometry()).toEqual(before);
+  await page.evaluate(() => window.historyTest.pending.shift()());
+  await expect(page.locator(".clip")).toHaveCount(22);
+  expect(await geometry()).toEqual(before);
+  await tabs.nth(0).focus();
+  await page.keyboard.press("Enter");
+  await expect(tabs.nth(0)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".clip")).toHaveCount(50);
+});
+
+test("arrow navigation moves focus from top controls to the history list", async ({
+  page,
+}) => {
+  const capture = page.getByRole("button", { name: "暂停记录", exact: true });
+  await capture.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator(".clip-list")).toBeFocused();
+  await expect(selected(page)).toContainText("记录 2 中文测试");
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator(".clip-list")).toBeFocused();
+  await expect(selected(page)).toContainText("记录 1 中文测试");
+  await page.keyboard.press("Enter");
+  await expect
+    .poll(() => page.evaluate(() => window.historyTest.pastes))
+    .toEqual([1]);
+});
+
 test("reopening clears filters and dialogs, selects latest and scrolls to top", async ({
   page,
 }, testInfo) => {

@@ -244,7 +244,10 @@ kbd {
 }
 
 .tab-segment {
-  display: flex;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   align-items: center;
   gap: 2px;
   padding: 3px;
@@ -256,28 +259,48 @@ kbd {
     0 4px 12px rgba(59, 90, 142, 0.06);
 }
 
+.tab-segment::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc((100% - 8px) / 2);
+  border-radius: 20px;
+  background: linear-gradient(155deg, #398cf3, #0664df);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.65),
+    0 3px 8px rgba(30, 112, 228, 0.22);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tab-segment.show-pinned::before {
+  transform: translateX(calc(100% + 2px));
+}
+
 .tab-segment button {
   height: 30px;
   padding: 0 12px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-secondary);
   border-radius: 20px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab-segment button:hover {
-  background: rgba(0, 0, 0, 0.04);
   color: var(--text-primary);
 }
 
+.tab-segment button:active {
+  transform: none;
+}
+
 .tab-segment button.active {
-  background: linear-gradient(155deg, #398cf3, #0664df);
   color: #fff;
-  box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.65),
-    0 3px 8px rgba(30, 112, 228, 0.22);
-  font-weight: 600;
 }
 
 .tab-segment button span {
@@ -294,6 +317,8 @@ kbd {
 }
 
 .clip-list {
+  /* The selected card indicates focus during arrow-key navigation. */
+  outline: none;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -674,33 +699,6 @@ kbd {
   background: rgba(255, 183, 72, 0.15);
 }
 
-.keyboard-help {
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.keyboard-help summary {
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.keyboard-help dl {
-  margin: 12px 0 0;
-}
-
-.keyboard-help dl > div {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 5px 0;
-  color: var(--text-secondary);
-}
-
-.keyboard-help dd {
-  margin: 0;
-}
-
 .status-dot {
   width: 6px;
   height: 6px;
@@ -813,6 +811,16 @@ dialog {
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   box-shadow: var(--shadow-lg);
+}
+
+.settings-dialog {
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.settings-dialog::-webkit-scrollbar {
+  display: none;
 }
 
 dialog::backdrop {
@@ -1153,7 +1161,9 @@ dialog::backdrop {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     scroll-behavior: auto !important;
   }

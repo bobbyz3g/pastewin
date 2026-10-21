@@ -85,7 +85,13 @@ export function useHistory(fail: (error: unknown) => void) {
         return;
       // Invalidate immediately, before the debounced request starts.
       ++request.current;
-      update({ ...patch, page: empty, selected: null, loading: true });
+      update({
+        ...patch,
+        // Global counts remain valid while the filtered entries are loading.
+        page: { ...current.current.page, entries: [], total: 0 },
+        selected: null,
+        loading: true,
+      });
     },
     [stopFollowing, update],
   );
@@ -112,7 +118,7 @@ export function useHistory(fail: (error: unknown) => void) {
     update({
       query: "",
       pinned: false,
-      page: empty,
+      page: { ...current.current.page, entries: [], total: 0 },
       selected: null,
       loading: true,
     });
