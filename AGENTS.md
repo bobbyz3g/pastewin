@@ -14,7 +14,7 @@
 ## 技术栈与入口
 
 - Go + Wails **v3.0.0-beta.25**，React 18 + TypeScript + Vite，图标使用 lucide-react。
-- SQLite 使用 `modernc.org/sqlite`（纯 Go）。以 `go.mod` 和 `frontend/package-lock.json` 为实际依赖依据。
+- SQLite 使用 `modernc.org/sqlite`（纯 Go）。以 `go.mod` 和 `frontend/pnpm-lock.yaml` 为实际依赖依据。
 - 当前构建面向 Windows；`build/` 中保留的其他平台模板不表示已经支持这些平台。
 
 | 路径 | 职责 |
@@ -72,7 +72,7 @@
 
 ## 开发与验证
 
-环境：Windows 10/11、Go 1.27.0+、Node.js 22.12+ 或兼容版本、WebView2。CLI 与项目 Wails 版本保持一致：
+环境：Windows 10/11、Go 1.27.0+、Node.js 22.12+ 或兼容版本、pnpm 12.14.0、WebView2。Wails 默认使用 pnpm 冻结安装，依赖变更须同步 `frontend/pnpm-lock.yaml`；`frontend/pnpm-workspace.yaml` 配置 7 天发布等待期。CLI 与项目 Wails 版本保持一致：
 
 ```powershell
 go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25
@@ -88,13 +88,13 @@ wails3 build                 # 完整生产构建，包含绑定生成和前端�
 wails3 task package          # NSIS 安装包，需要 NSIS 3；详见 docs/packaging.md
 go test ./...
 go vet ./...
-npm --prefix frontend run format
-npm --prefix frontend run build  # 仅检查/构建前端
-npm --prefix frontend test       # 本机 Edge 无头浏览器回归，合成数据、端口 9246
+pnpm --dir frontend run format
+pnpm --dir frontend run build  # 仅检查/构建前端
+pnpm --dir frontend test       # 本机 Edge 无头浏览器回归，合成数据、端口 9246
 ```
 
 - 产物为 `bin/pastewin.exe`。Go 嵌入 `frontend/dist`；全新检出时先完成构建，再运行 Go 测试。
-- 纯界面预览：在 `frontend` 运行 `npm ci`、`npm run dev`，访问 `http://127.0.0.1:9245/?preview=1`。预览不操作系统剪贴板，示例数据只限开发构建；浏览器验证不能代替原生粘贴验证。
+- 纯界面预览：在 `frontend` 运行 `pnpm install --frozen-lockfile`、`pnpm run dev`，访问 `http://127.0.0.1:9245/?preview=1`。预览不操作系统剪贴板，示例数据只限开发构建；浏览器验证不能代替原生粘贴验证。
 - 按改动范围验证：文档改动核对内容即可；前端改动做编译和视觉/交互检查；存储、原生或服务改动做相应测试、静态检查及生产构建。
 - 原生回归使用记事本等测试窗口：复制中文/多行 → 热键唤起 → 搜索/收藏 → 粘贴回光标位置；涉及生命周期时检查暂停/恢复、隐藏后唤起和退出重启。
 - 为具体行为、边界和回归添加测试，不用仅复述实现的测试。已有存储测试覆盖去重、收藏保留、容量、分页、字面搜索、清理、大小限制及重启持久化。

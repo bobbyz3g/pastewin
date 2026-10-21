@@ -12,7 +12,6 @@ import {
   Clipboard,
   ClipboardPaste,
   Copy,
-  CornerDownLeft,
   FileText,
   Image as ImageIcon,
   Link2,

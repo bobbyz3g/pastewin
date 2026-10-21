@@ -64,7 +64,7 @@ History, images, and favorites are stored in `%APPDATA%\PasteWin\history.db`. St
 
 ## Build from source
 
-On Windows, install **Go 1.27.0+**, **Node.js 22.12+ or a compatible newer version**, and **WebView2 Runtime**. Run from the repository root:
+On Windows, install **Go 1.27.0+**, **Node.js 22.12+ or a compatible newer version**, **pnpm 12.14.0**, and **WebView2 Runtime**. Run from the repository root:
 
 ```powershell
 go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25

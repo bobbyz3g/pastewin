@@ -64,7 +64,7 @@ PasteWin 只发送 **Ctrl+V**，不会额外发送 Enter 或提交消息。没�
 
 ## 从源码构建
 
-在 Windows 上安装 **Go 1.27.0+**、**Node.js 22.12+ 或兼容的较新版本**和 **WebView2 Runtime**，然后从仓库根目录执行：
+在 Windows 上安装 **Go 1.27.0+**、**Node.js 22.12+ 或兼容的较新版本**、**pnpm 12.14.0** 和 **WebView2 Runtime**，然后从仓库根目录执行：
 
 ```powershell
 go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.25

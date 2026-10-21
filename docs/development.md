@@ -4,9 +4,11 @@
 
 ## Environment and setup
 
-Development targets Windows 10/11 with Go 1.27.0+, Node.js 22.12+ or a compatible newer version, and WebView2 Runtime. Build templates for other platforms do not indicate supported PasteWin builds.
+Development targets Windows 10/11 with Go 1.27.0+, Node.js 22.12+ or a compatible newer version, pnpm 12.14.0, and WebView2 Runtime. Build templates for other platforms do not indicate supported PasteWin builds.
 
-The project uses Wails **v3.0.0-beta.25**, React 18, TypeScript, Vite, lucide-react, and the pure-Go `modernc.org/sqlite` driver. Exact dependencies are recorded in [go.mod](../go.mod) and [package-lock.json](../frontend/package-lock.json).
+Install the pinned package manager with `npm install --global pnpm@12.14.0` if needed. Wails development and production builds use pnpm with `--frozen-lockfile`. After changing dependencies, update and commit `frontend/pnpm-lock.yaml`. The frontend's `pnpm-workspace.yaml` sets a seven-day minimum release age for dependency resolution; pnpm 12 reads this setting from YAML, not `.npmrc`.
+
+The project uses Wails **v3.0.0-beta.25**, React 18, TypeScript, Vite, lucide-react, and the pure-Go `modernc.org/sqlite` driver. Exact dependencies are recorded in [go.mod](../go.mod) and [pnpm-lock.yaml](../frontend/pnpm-lock.yaml).
 
 From the repository root:
 
@@ -36,8 +38,8 @@ For a browser-only UI preview:
 
 ```powershell
 cd frontend
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
 Open `http://127.0.0.1:9245/?preview=1`. Preview mode uses in-memory sample data and does not access the system clipboard. Sample data is limited to development builds. Browser preview cannot exercise native hotkeys or paste into another application.
@@ -49,11 +51,11 @@ Run from the repository root after the initial build:
 ```powershell
 go test ./...
 go vet ./...
-npm --prefix frontend run build
-npm --prefix frontend test
+pnpm --dir frontend run build
+pnpm --dir frontend test
 ```
 
-`npm --prefix frontend run format` formats frontend source and tests in place.
+`pnpm --dir frontend run format` formats frontend source and tests in place.
 
 Browser tests use installed Microsoft Edge in headless mode and synthetic data. They start a preview server on port 9246, test 360 × 680 and 320 × 420 viewports, and write results to `.work/browser-results`. Coverage includes panel reopening, delayed capture, selection, stale requests, pagination, dialogs, and copy/paste target state.
 

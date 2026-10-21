@@ -3,7 +3,7 @@ version: '3'
 vars:
   APP_NAME: pastewin
   BIN_DIR: bin
-  PACKAGE_MANAGER: npm
+  PACKAGE_MANAGER: pnpm
   VITE_PORT: '{{.WAILS_VITE_PORT | default 9245}}'
 
 includes:

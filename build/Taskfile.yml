@@ -48,13 +48,14 @@ tasks:
     sources:
       - package.json
       - pnpm-lock.yaml
+      - pnpm-workspace.yaml
     generates:
       - node_modules
     preconditions:
       - sh: pnpm --version
         msg: "pnpm not found"
     cmds:
-      - pnpm install
+      - pnpm install --frozen-lockfile
 
   install:frontend:deps:yarn:
     dir: frontend
