@@ -34,7 +34,12 @@ func main() {
 	service.app = app
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "PasteWin", Name: "main", Width: 360, Height: 680, MinWidth: 320, MinHeight: 420,
-		Frameless: true, BackgroundColour: application.NewRGB(234, 233, 241), URL: "/",
+		Frameless: true, BackgroundColour: application.NewRGB(235, 240, 249), URL: "/",
+		BackgroundType: application.BackgroundTypeTranslucent,
+		Windows: application.WindowsWindow{
+			BackdropType: application.Acrylic,
+			Theme:        application.Light,
+		},
 		Hidden: slices.Contains(os.Args[1:], startup.Argument),
 	})
 	service.window = window

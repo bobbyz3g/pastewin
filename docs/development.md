@@ -121,6 +121,10 @@ Useful desktop checks with synthetic content:
 
 ## Implementation overview
 
+The compact panel uses a light Liquid Glass-inspired palette, pill-shaped category controls, a floating action toolbar, and opaque-enough content cards. Wails enables the native Acrylic backdrop with a light window theme; on older Windows versions its backend falls back to blur-behind. Desktop translucency depends on the OS and transparency settings. CSS provides reduced-transparency and forced-colors treatments. Keep blur on controls rather than every history card to limit compositing work. Verify both 360 × 680 and 320 × 420 layouts, and use a native window to check the backdrop; browser preview only shows the frontend layers.
+
+Run browser regression tests after production builds finish: binding generation can trigger Vite hot reload and replace test fixtures if a build runs concurrently.
+
 The UI supports `zh-CN` (default) and `en`. The preference is stored under `language` in the existing SQLite `settings` table, without a schema migration. The frontend loads it before displaying the panel and changes language only after saving succeeds. The tray labels update on the UI thread. Browser preview uses a separate localStorage preference and does not change the native setting.
 
 Chinese UI messages act as typed translation keys, with named placeholders for values. English count labels include singular forms, and timestamps and counts use the selected locale. Known backend errors and their wrappers are translated at the display boundary, while unknown diagnostics and clipboard content remain unchanged. Language regression tests cover persistence, failed saves, unchanged selection, keyboard switching, and both panel sizes.

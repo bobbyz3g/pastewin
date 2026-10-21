@@ -15,7 +15,6 @@ import {
   FileText,
   Image as ImageIcon,
   Link2,
-  PanelsTopLeft,
   ScanText,
   Search,
   Settings,
@@ -359,7 +358,7 @@ export default function App() {
     >
       <header className="titlebar">
         <div className="drag-handle" title={t("拖动 PasteWin 窗口")}>
-          <PanelsTopLeft size={18} />
+          <Clipboard size={20} strokeWidth={1.6} />
         </div>
         <div className="search-box">
           <Search size={14} />
@@ -394,28 +393,48 @@ export default function App() {
         </button>
       </header>
       <nav className="tabs" aria-label={t("历史分类")}>
+        <div className="tab-segment">
+          <button
+            className={!pinned ? "active" : ""}
+            aria-pressed={!pinned}
+            onClick={() => setPinned(false)}
+          >
+            {t("全部")} <span>{page.all}</span>
+          </button>
+          <button
+            className={pinned ? "active" : ""}
+            aria-pressed={pinned}
+            onClick={() => setPinned(true)}
+          >
+            <Star size={12} />
+            {t("收藏")} <span>{page.pinned}</span>
+          </button>
+        </div>
         <button
-          className={!pinned ? "active" : ""}
-          aria-pressed={!pinned}
-          onClick={() => setPinned(false)}
+          className={`capture-toggle ${status?.paused ? "paused" : ""}`}
+          disabled={busy || !status}
+          aria-label={status?.paused ? t("恢复记录") : t("暂停记录")}
+          title={
+            status?.paused ? t("已暂停，点击恢复") : t("正在记录，点击暂停")
+          }
+          onClick={() => void perform(() => api("SetPaused", !status?.paused))}
         >
-          {t("全部")} <span>{page.all}</span>
+          <span className="status-dot" />
+          {status?.paused ? t("已暂停") : t("记录中")}
         </button>
-        <button
-          className={pinned ? "active" : ""}
-          aria-pressed={pinned}
-          onClick={() => setPinned(true)}
-        >
-          <Star size={12} />
-          {t("收藏")} <span>{page.pinned}</span>
-        </button>
-        <span className="panel-label">
-          {preview ? t("界面预览") : "PasteWin"}
-        </span>
       </nav>
       {status?.hotkeyError && (
         <div className="warning" role="status">
           {translateError(status.hotkeyError)}
+        </div>
+      )}
+      {query && (
+        <div className="search-summary" role="status">
+          {loading
+            ? t("正在读取历史…")
+            : t("{count} 条匹配", {
+                count: page.total.toLocaleString(language),
+              })}
         </div>
       )}
       <main
@@ -435,10 +454,10 @@ export default function App() {
           const list = listRef.current;
           if (!list) return;
 
-          list.classList.add('scrolling');
+          list.classList.add("scrolling");
           clearTimeout(scrollTimer.current);
           scrollTimer.current = setTimeout(() => {
-            list.classList.remove('scrolling');
+            list.classList.remove("scrolling");
           }, 1000);
         }}
       >
@@ -467,7 +486,7 @@ export default function App() {
           page.entries.map((item) => (
             <button
               key={item.id}
-              className={`clip ${selected === item.id ? "selected" : ""}`}
+              className={`clip ${item.hasImage ? "has-image" : ""} ${selected === item.id ? "selected" : ""}`}
               aria-pressed={selected === item.id}
               aria-haspopup="menu"
               onContextMenu={(e) => {
@@ -507,11 +526,11 @@ export default function App() {
               <span className="clip-meta">
                 <span className="clip-kind">
                   {item.hasImage ? (
-                    <ImageIcon size={11} />
+                    <ImageIcon size={22} strokeWidth={1.5} />
                   ) : isURL(item.preview) ? (
-                    <Link2 size={11} />
+                    <Link2 size={22} strokeWidth={1.5} />
                   ) : (
-                    <FileText size={11} />
+                    <FileText size={22} strokeWidth={1.5} />
                   )}
                   {item.pinned && (
                     <Star size={11} className="starred" fill="currentColor" />
@@ -623,31 +642,7 @@ export default function App() {
           {t("粘贴")}
         </button>
       </div>
-      <footer className="footer">
-        <button
-          className={`capture-toggle ${status?.paused ? "paused" : ""}`}
-          disabled={busy || !status}
-          aria-label={status?.paused ? t("恢复记录") : t("暂停记录")}
-          title={
-            status?.paused ? t("已暂停，点击恢复") : t("正在记录，点击暂停")
-          }
-          onClick={() => void perform(() => api("SetPaused", !status?.paused))}
-        >
-          <span className="status-dot" />
-          {status?.paused ? t("已暂停") : t("记录中")}
-        </button>
-        <span aria-live="polite">
-          {t(query ? "{count} 条匹配" : "{count} 条记录", {
-            count: page.total.toLocaleString(language),
-          })}
-        </span>
-        <span
-          className="shortcut-hint"
-          title={t("方向键选择，Enter 粘贴，Delete 删除，Esc 隐藏")}
-        >
-          ↑ ↓ <span>{t("选择")}</span>
-        </span>
-      </footer>
+
       <dialog
         ref={detailRef}
         className="preview-dialog"
@@ -855,6 +850,41 @@ export default function App() {
             </span>
           </button>
         </div>
+        <details className="keyboard-help">
+          <summary>{t("快捷操作")}</summary>
+          <dl>
+            <div>
+              <dt>{t("选择")}</dt>
+              <dd>
+                <kbd>↑ ↓</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>{t("粘贴")}</dt>
+              <dd>
+                <kbd>Enter</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>{t("复制")}</dt>
+              <dd>
+                <kbd>Ctrl Enter</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>{t("删除")}</dt>
+              <dd>
+                <kbd>Delete</kbd>
+              </dd>
+            </div>
+            <div>
+              <dt>{t("隐藏到托盘")}</dt>
+              <dd>
+                <kbd>Esc</kbd>
+              </dd>
+            </div>
+          </dl>
+        </details>
         <div className="storage-note">
           <ShieldCheck size={20} />
           <div>

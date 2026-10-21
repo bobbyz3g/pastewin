@@ -9,18 +9,19 @@
   font-size: 12px;
 
   /* Glass Design System */
-  --accent-blue: #007AFF;
-  --accent-blue-hover: #0051D5;
-  --text-primary: #1d1d1f;
-  --text-secondary: #86868b;
-  --text-tertiary: #c7c7cc;
+  --accent-blue: #0767df;
+  --accent-blue-hover: #0054c5;
+  --text-primary: #202e46;
+  --text-secondary: #5f708a;
+  --text-tertiary: #71819b;
 
   /* Glass layers */
-  --glass-bg: rgba(245, 245, 250, 0.72);
-  --glass-card: rgba(255, 255, 255, 0.65);
-  --glass-card-hover: rgba(255, 255, 255, 0.80);
-  --glass-selected: rgba(0, 122, 255, 0.12);
-  --glass-toolbar: rgba(249, 249, 251, 0.88);
+  --glass-bg: rgba(235, 241, 252, 0.76);
+  --glass-card: rgba(255, 255, 255, 0.76);
+  --glass-card-hover: rgba(255, 255, 255, 0.9);
+  --glass-selected: rgba(226, 240, 255, 0.86);
+  --glass-toolbar: rgba(248, 251, 255, 0.64);
+  --glass-rim: rgba(255, 255, 255, 0.9);
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
@@ -28,10 +29,10 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
 
   /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
 }
 
 * {
@@ -113,27 +114,35 @@ kbd {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  background:
+    radial-gradient(
+      ellipse at 0% 15%,
+      rgba(162, 204, 255, 0.28),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse at 100% 90%,
+      rgba(203, 192, 244, 0.22),
+      transparent 60%
+    ),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.3), transparent 45%),
+    var(--glass-bg);
+  border: 1px solid var(--glass-rim);
+  /* Match Windows' native rounded frame rather than exposing transparent corners. */
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.26);
 }
 
 .titlebar {
   display: flex;
   align-items: center;
   flex: none;
-  gap: 4px;
-  padding: 10px 8px 6px;
-  height: 48px;
+  gap: 5px;
+  padding: 12px 10px 6px;
+  height: 58px;
   --wails-draggable: drag;
   user-select: none;
-  background: var(--glass-toolbar);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: transparent;
 }
 
 .drag-handle {
@@ -156,7 +165,7 @@ kbd {
   flex: none;
   padding: 0;
   color: var(--text-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: 50%;
 }
 
 .icon-button:hover {
@@ -170,25 +179,33 @@ kbd {
 }
 
 .search-box {
-  height: 32px;
+  height: 36px;
   min-width: 0;
   flex: 1;
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.82),
+    rgba(255, 255, 255, 0.44)
+  );
+  border: 1px solid var(--glass-rim);
+  border-radius: 22px;
   color: var(--text-secondary);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    inset 0 1px 1px #fff,
+    0 3px 10px rgba(63, 99, 153, 0.05);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .search-box:focus-within {
   background: rgba(255, 255, 255, 0.9);
   border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15), var(--shadow-sm);
+  box-shadow:
+    0 0 0 3px rgba(0, 122, 255, 0.15),
+    var(--shadow-sm);
 }
 
 .search-box input {
@@ -221,45 +238,59 @@ kbd {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 6px 12px 12px;
   flex: none;
   background: transparent;
 }
 
-.tabs button {
-  height: 28px;
+.tab-segment {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 24px;
+  border: 1px solid var(--glass-rim);
+  background: var(--glass-toolbar);
+  box-shadow:
+    inset 0 1px 1px #fff,
+    0 4px 12px rgba(59, 90, 142, 0.06);
+}
+
+.tab-segment button {
+  height: 30px;
   padding: 0 12px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  border-radius: var(--radius-sm);
+  border-radius: 20px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.tabs button:hover {
+.tab-segment button:hover {
   background: rgba(0, 0, 0, 0.04);
   color: var(--text-primary);
 }
 
-.tabs button.active {
-  background: rgba(0, 122, 255, 0.12);
-  color: var(--accent-blue);
+.tab-segment button.active {
+  background: linear-gradient(155deg, #398cf3, #0664df);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.65),
+    0 3px 8px rgba(30, 112, 228, 0.22);
   font-weight: 600;
 }
 
-.tabs button span {
+.tab-segment button span {
   font-size: 11px;
   opacity: 0.8;
   font-weight: 600;
 }
 
-.panel-label {
-  margin-left: auto;
-  color: var(--text-tertiary);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2px;
-  padding-right: 4px;
+.search-summary {
+  flex: none;
+  padding: 0 16px 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
 }
 
 .clip-list {
@@ -268,7 +299,18 @@ kbd {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding: 4px 12px 8px;
+  padding: 4px 10px 24px;
+  margin: 0 3px;
+  scrollbar-gutter: stable;
+  scroll-padding-block: 4px 24px;
+  /* Fade the scroll boundary into the floating toolbar, keeping the final
+     card above the fade when scrolled fully into view. */
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 calc(100% - 20px),
+    transparent 100%
+  );
 }
 
 /* WebKit - overlay 模式滚动条 */
@@ -305,59 +347,92 @@ kbd {
 }
 
 .clip {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: 16px auto;
+  align-content: start;
+  align-items: start;
+  gap: 6px 11px;
   width: 100%;
-  min-height: 76px;
-  padding: 10px 14px;
-  margin: 0 0 8px;
+  min-height: 86px;
+  padding: 13px 12px;
+  margin: 0 0 10px;
   background: var(--glass-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--glass-rim);
   border-radius: var(--radius-lg);
   text-align: left;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 3px 10px rgba(58, 86, 135, 0.035);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .clip:hover {
   background: var(--glass-card-hover);
   border-color: rgba(255, 255, 255, 0.6);
   box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .clip.selected {
   background: var(--glass-selected);
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.2), var(--shadow-md);
-  transform: translateY(0);
+  border-color: #4a9afa;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    0 0 0 1px rgba(75, 156, 255, 0.18),
+    0 4px 13px rgba(45, 121, 220, 0.12);
+  transform: none;
 }
 
 .clip-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 14px;
-  flex: none;
+  display: contents;
   color: var(--text-secondary);
   font-size: 10px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
+.clip-meta time {
+  grid-column: 2;
+  grid-row: 1;
+}
+
 .clip-kind {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 36px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(92, 126, 178, 0.08);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.72),
+    rgba(186, 204, 233, 0.2)
+  );
   color: var(--text-secondary);
 }
 
+.clip.selected .clip-kind {
+  color: var(--accent-blue);
+}
+
+.clip-kind .starred {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  filter: drop-shadow(0 1px 1px white);
+}
+
 .clip-text {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
@@ -368,6 +443,10 @@ kbd {
   line-height: 1.5;
   color: var(--text-primary);
   font-weight: 400;
+}
+
+.clip.has-image .clip-text {
+  grid-row: 4;
 }
 
 .link-text {
@@ -386,21 +465,27 @@ kbd {
 }
 
 .clip-thumbnail {
+  grid-column: 2;
+  grid-row: 2;
   display: block;
   width: 100%;
-  height: 120px;
+  height: 96px;
   object-fit: contain;
   border-radius: var(--radius-sm);
-  margin: 4px 0;
+  margin: 0;
 }
 
 .image-info {
+  grid-column: 2;
+  grid-row: 3;
   font-size: 10px;
   font-weight: 500;
   color: var(--text-secondary);
 }
 
 .image-unavailable {
+  grid-column: 2;
+  grid-row: 2;
   display: block;
   padding: 18px 8px;
   font-size: 11px;
@@ -502,11 +587,25 @@ kbd {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  background: var(--glass-toolbar);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  padding: 7px;
+  margin: 5px 12px 12px;
+  border: 1px solid var(--glass-rim);
+  border-radius: 28px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.8),
+    var(--glass-toolbar)
+  );
+  backdrop-filter: blur(22px) saturate(140%);
+  box-shadow:
+    inset 0 1px 1px #fff,
+    0 5px 18px rgba(57, 88, 139, 0.09);
+}
+
+.selection-actions .icon-button {
+  width: 36px;
+  height: 36px;
+  color: #435874;
 }
 
 .action-spacer {
@@ -536,8 +635,12 @@ kbd {
 
 .paste-action {
   color: #fff;
-  background: var(--accent-blue);
-  box-shadow: var(--shadow-sm);
+  height: 36px;
+  border-radius: 22px;
+  background: linear-gradient(150deg, #398cf3, #0664df);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.6),
+    0 3px 9px rgba(30, 112, 228, 0.2);
 }
 
 .paste-action:hover {
@@ -549,23 +652,10 @@ kbd {
   color: #ff3b30;
 }
 
-.footer {
-  flex: none;
-  height: 32px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  background: var(--glass-toolbar);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  color: var(--text-secondary);
-  font-size: 10px;
-  font-weight: 500;
-}
-
 .capture-toggle {
+  margin-left: auto;
+  flex: none;
+  white-space: nowrap;
   gap: 6px;
   height: 26px;
   padding: 0 4px;
@@ -579,6 +669,38 @@ kbd {
   background: rgba(0, 0, 0, 0.04);
 }
 
+.capture-toggle.paused {
+  color: #9a5500;
+  background: rgba(255, 183, 72, 0.15);
+}
+
+.keyboard-help {
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.keyboard-help summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.keyboard-help dl {
+  margin: 12px 0 0;
+}
+
+.keyboard-help dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 5px 0;
+  color: var(--text-secondary);
+}
+
+.keyboard-help dd {
+  margin: 0;
+}
+
 .status-dot {
   width: 6px;
   height: 6px;
@@ -590,13 +712,6 @@ kbd {
 .paused .status-dot {
   background: #ff9500;
   box-shadow: 0 0 4px rgba(255, 149, 0, 0.4);
-}
-
-.shortcut-hint {
-  display: flex;
-  gap: 5px;
-  color: var(--text-tertiary);
-  font-weight: 500;
 }
 
 .warning {
@@ -982,14 +1097,58 @@ dialog::backdrop {
 }
 
 @media (max-height: 480px) {
+  .titlebar {
+    height: 50px;
+    padding-top: 6px;
+  }
+  .tabs {
+    padding-bottom: 8px;
+  }
   .clip {
     min-height: 68px;
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
   .clip-text {
     -webkit-line-clamp: 2;
   }
   dialog {
     padding: 16px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell {
+    background: #edf2fa;
+  }
+  .tab-segment,
+  .selection-actions,
+  .search-box,
+  .clip,
+  dialog,
+  .entry-menu {
+    backdrop-filter: none;
+    background: #f8faff;
+  }
+  .clip.selected {
+    background: #e2efff;
+  }
+}
+
+@media (forced-colors: active) {
+  .app-shell,
+  .clip,
+  .tab-segment,
+  .selection-actions {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+    box-shadow: none;
+  }
+  .clip.selected,
+  .tab-segment button.active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
   }
 }
 

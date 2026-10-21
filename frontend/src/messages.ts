@@ -78,6 +78,7 @@ export const english = {
     "Save new copies while PasteWin is running.",
   继续记录: "Resume",
   打开面板: "Open panel",
+  快捷操作: "Keyboard shortcuts",
   开机启动: "Start at sign-in",
   "自动运行，不弹出窗口。": "Start quietly without opening a window.",
   "仅供预览，未更改开机启动。": "Preview only. Startup settings unchanged.",
