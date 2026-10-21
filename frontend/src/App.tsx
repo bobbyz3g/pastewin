@@ -580,6 +580,15 @@ export default function App() {
           <Star size={15} fill={entry?.pinned ? "currentColor" : "none"} />
         </button>
         <button
+          className="icon-button"
+          aria-label={t("复制")}
+          title={t("复制 · Ctrl+Enter")}
+          disabled={busy || !entry}
+          onClick={copy}
+        >
+          <Copy size={15} />
+        </button>
+        <button
           className="icon-button delete-button"
           aria-label={t("删除记录")}
           title={t("删除记录 · Delete")}
@@ -590,15 +599,6 @@ export default function App() {
           <Trash2 size={15} />
         </button>
         <span className="action-spacer" />
-        <button
-          className="copy-action"
-          disabled={busy || !entry}
-          onClick={copy}
-          title={t("复制 · Ctrl+Enter")}
-        >
-          <Copy size={14} />
-          {t("复制")}
-        </button>
         <button
           className="paste-action"
           disabled={busy || !entry || !status?.canPaste}
@@ -611,7 +611,6 @@ export default function App() {
         >
           <ClipboardPaste size={14} />
           {t("粘贴")}
-          <CornerDownLeft size={12} />
         </button>
       </div>
       <footer className="footer">
@@ -680,22 +679,7 @@ export default function App() {
               ? t("复制文字")
               : t("复制")}
           </button>
-          <button
-            className="primary"
-            disabled={busy || !entry || !status?.canPaste}
-            onClick={() => {
-              setDetails(false);
-              paste();
-            }}
-          >
-            <ClipboardPaste size={14} />
-            {entry?.hasImage && entry.characters > 0
-              ? t("粘贴文字")
-              : t("粘贴到原应用")}
-          </button>
-        </div>
-        {entry?.hasImage && entry.characters > 0 && (
-          <div className="preview-actions image-actions">
+          {entry?.hasImage && entry.characters > 0 && (
             <button
               className="secondary"
               disabled={busy}
@@ -709,6 +693,21 @@ export default function App() {
               <Copy size={14} />
               {t("复制图片")}
             </button>
+          )}
+          <button
+            className="primary"
+            disabled={busy || !entry || !status?.canPaste}
+            onClick={() => {
+              setDetails(false);
+              paste();
+            }}
+          >
+            <ClipboardPaste size={14} />
+            {entry?.hasImage && entry.characters > 0
+              ? t("粘贴文字")
+              : t("粘贴")}
+          </button>
+          {entry?.hasImage && entry.characters > 0 && (
             <button
               className="primary"
               disabled={busy || !status?.canPaste}
@@ -720,8 +719,8 @@ export default function App() {
               <ClipboardPaste size={14} />
               {t("粘贴图片")}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </dialog>
 
       {notice &&
