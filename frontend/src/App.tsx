@@ -98,7 +98,8 @@ export default function App() {
     listRef = useRef<HTMLElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null),
     detailRef = useRef<HTMLDialogElement>(null),
-    noticeTimer = useRef<ReturnType<typeof setTimeout>>();
+    noticeTimer = useRef<ReturnType<typeof setTimeout>>(),
+    scrollTimer = useRef<ReturnType<typeof setTimeout>>();
   const notify = useCallback((text: string, error = false) => {
     setNotice({ text, error });
     clearTimeout(noticeTimer.current);
@@ -429,6 +430,16 @@ export default function App() {
             listRef.current?.scrollTop !== contextMenu.scrollTop
           )
             closeMenu();
+
+          // macOS-style scrollbar: show on scroll, hide after idle
+          const list = listRef.current;
+          if (!list) return;
+
+          list.classList.add('scrolling');
+          clearTimeout(scrollTimer.current);
+          scrollTimer.current = setTimeout(() => {
+            list.classList.remove('scrolling');
+          }, 1000);
         }}
       >
         {loading ? (
