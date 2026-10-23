@@ -330,6 +330,7 @@ export default function App() {
       }
       if (e.key === "Escape") {
         e.preventDefault();
+        if (e.repeat) return;
         if (query) setQuery("");
         else void api("Hide").catch(fail);
       }
@@ -682,7 +683,16 @@ export default function App() {
       <dialog
         ref={detailRef}
         className="preview-dialog"
-        onCancel={() => setDetails(false)}
+        onKeyDown={(e) => {
+          if (e.key !== "Escape") return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (!e.repeat && !e.nativeEvent.isComposing) setDetails(false);
+        }}
+        onCancel={(e) => {
+          e.preventDefault();
+          setDetails(false);
+        }}
         onClose={() => setDetails(false)}
         aria-labelledby="preview-title"
       >
@@ -785,7 +795,22 @@ export default function App() {
       <dialog
         ref={dialogRef}
         className="settings-dialog"
-        onCancel={() => setSettings(false)}
+        onKeyDown={(e) => {
+          if (e.key !== "Escape") return;
+          // Let an open language picker consume Escape before its dialog.
+          if (
+            e.target instanceof HTMLSelectElement &&
+            e.target.matches(":open")
+          )
+            return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (!e.repeat && !e.nativeEvent.isComposing) setSettings(false);
+        }}
+        onCancel={(e) => {
+          e.preventDefault();
+          setSettings(false);
+        }}
         onClose={() => {
           setSettings(false);
           setConfirmClear(false);

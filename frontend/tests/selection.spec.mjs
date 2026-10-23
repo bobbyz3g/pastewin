@@ -367,3 +367,36 @@ test("Space keeps text input and ignores modified or composing shortcuts", async
     page.getByRole("dialog", { name: "内容预览" }),
   ).not.toBeVisible();
 });
+
+for (const kind of ["preview", "settings"]) {
+  test(`Escape closes only ${kind}, including held-key repeats`, async ({
+    page,
+  }) => {
+    await page.evaluate(async () => {
+      const { demo } = await import("/src/preview.ts");
+      window.hideCalls = 0;
+      demo.Hide = async () => {
+        window.hideCalls++;
+      };
+    });
+    await search(page).press("ArrowDown");
+    await page
+      .getByRole("button", {
+        name: kind === "preview" ? "查看内容" : "设置",
+        exact: true,
+      })
+      .click();
+    const dialog = page.getByRole("dialog", {
+      name: kind === "preview" ? "内容预览" : "设置",
+      exact: true,
+    });
+    await expect(dialog).toBeVisible();
+    await page.keyboard.down("Escape");
+    await expect(dialog).not.toBeVisible();
+    await page.keyboard.down("Escape");
+    await page.keyboard.up("Escape");
+    expect(await page.evaluate(() => window.hideCalls)).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect.poll(() => page.evaluate(() => window.hideCalls)).toBe(1);
+  });
+}
