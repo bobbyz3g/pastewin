@@ -1,6 +1,6 @@
 # Development guide
 
-[README](../README.md) · [中文介绍](../README.zh-CN.md) · [Windows packaging](packaging.md)
+[README](../README.md) · [中文介绍](../README.zh-CN.md) · [Windows packaging](packaging.md) · [Release guide](releasing.md)
 
 ## Environment and setup
 

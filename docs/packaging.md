@@ -1,6 +1,6 @@
 # Windows packaging
 
-[README](../README.md) · [中文介绍](../README.zh-CN.md) · [Development guide](development.md)
+[README](../README.md) · [中文介绍](../README.zh-CN.md) · [Development guide](development.md) · [Release guide](releasing.md)
 
 ## Build an installer
 

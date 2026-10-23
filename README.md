@@ -4,6 +4,12 @@ English | [简体中文](README.zh-CN.md)
 
 PasteWin is a local clipboard history tool for Windows. Save copied text and images, then use a keyboard shortcut to find and paste them back into your application. Your history stays on your computer. No account is required.
 
+<p align="center">
+  <img src="docs/images/pastewin-preview.png" alt="PasteWin clipboard panel showing sample text, a link, an image, and code" width="360">
+</p>
+
+Application preview with synthetic sample data; no personal clipboard content is shown.
+
 PasteWin is an early-stage project. The application supports English and Simplified Chinese. The installer currently uses Chinese UI text.
 
 Source app icons are shown for newly captured records when Windows can identify the clipboard owner. If an application publishes without an owner window, PasteWin uses the foreground application observed at the matching clipboard event as a best-effort fallback. Icons are loaded lazily by a separate worker and cached per application; unavailable icons and older records keep the default content icon. Browser copies show the browser icon, not website icons. WebView2 copies are resolved to their host application in the background. Each capture updates the source normally; unknown sources or unavailable icons use the default content icon. Application executable paths are stored only in the local database.
@@ -79,6 +85,8 @@ wails3 build
 The executable is written to `bin/pastewin.exe`. For live development, run `wails3 dev`.
 
 PasteWin uses Go, Wails v3, React, TypeScript, and SQLite. See the [development guide](docs/development.md) for setup, UI preview, tests, and source layout, and the [Windows packaging guide](docs/packaging.md) for installer builds and options.
+
+See the [release guide](docs/releasing.md) for version updates, tags, and bilingual GitHub Releases. By default, releases increment only the final (patch) version component.
 
 ## Feedback and contributions
 
