@@ -514,9 +514,59 @@ kbd {
 }
 
 .preview-content {
+  /* Programmatic initial focus is for keyboard navigation, not a control. */
+  outline: none;
   min-height: 0;
   overflow-y: auto;
   margin: 12px 0;
+}
+
+.preview-content,
+.content-text {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(95 112 138 / 28%) transparent;
+}
+
+.preview-content:hover,
+.content-text:hover {
+  scrollbar-color: rgb(95 112 138 / 48%) transparent;
+}
+
+.preview-content::-webkit-scrollbar,
+.content-text::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.preview-content::-webkit-scrollbar-track,
+.content-text::-webkit-scrollbar-track,
+.preview-content::-webkit-scrollbar-corner,
+.content-text::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.preview-content::-webkit-scrollbar-thumb,
+.content-text::-webkit-scrollbar-thumb {
+  border-radius: 1000px;
+  background: rgb(95 112 138 / 28%);
+}
+
+.preview-content::-webkit-scrollbar-thumb:hover,
+.content-text::-webkit-scrollbar-thumb:hover {
+  background: rgb(95 112 138 / 48%);
+}
+
+.preview-content::-webkit-scrollbar-button,
+.content-text::-webkit-scrollbar-button {
+  display: none;
+}
+
+@supports selector(::-webkit-scrollbar) {
+  .preview-content,
+  .content-text {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
 }
 
 .preview-image {

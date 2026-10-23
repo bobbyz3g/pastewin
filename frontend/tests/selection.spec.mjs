@@ -324,3 +324,46 @@ test("a new capture cannot displace the selected last item of a page", async ({
   await expect(selected(page)).toContainText("记录 50 中文测试");
   await expect(page.locator(".clip")).toHaveCount(66);
 });
+
+test("Space toggles selected preview and restores list focus without pasting", async ({
+  page,
+}) => {
+  await search(page).press("ArrowDown");
+  const list = page.getByRole("main");
+  const dialog = page.getByRole("dialog", { name: "内容预览" });
+  await page.keyboard.down("Space");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator(".preview-content")).toBeFocused();
+  await expect(dialog.locator(".content-text")).toContainText(
+    "记录 2 中文测试",
+  );
+  await page.keyboard.down("Space");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.up("Space");
+  await page.keyboard.press("Space");
+  await expect(dialog).not.toBeVisible();
+  await expect(list).toBeFocused();
+  await expect(selected(page)).toContainText("记录 2 中文测试");
+  await selected(page).click();
+  await page.keyboard.press("Space");
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Space");
+  await expect(dialog).not.toBeVisible();
+  expect(await page.evaluate(() => window.historyTest.pastes)).toEqual([]);
+});
+
+test("Space keeps text input and ignores modified or composing shortcuts", async ({
+  page,
+}) => {
+  await search(page).press("Space");
+  await expect(search(page)).toHaveValue(" ");
+  await search(page).fill("");
+  await search(page).press("ArrowDown");
+  await page.keyboard.press("Control+Space");
+  await page
+    .getByRole("main")
+    .dispatchEvent("keydown", { key: " ", isComposing: true });
+  await expect(
+    page.getByRole("dialog", { name: "内容预览" }),
+  ).not.toBeVisible();
+});

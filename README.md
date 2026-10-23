@@ -40,6 +40,7 @@ PasteWin sends **Ctrl+V** only. It does not send Enter or submit a message. If n
 | --- | --- |
 | Ctrl+Shift+V | Open the history panel |
 | ↑ / ↓ | Select a record |
+| Space | Open/close the selected record preview when the list is focused |
 | Enter | Paste the selected record |
 | Ctrl+Enter | Copy the selected record without pasting |
 | Delete | Delete the selected record; in a nonempty search field or another text field, edit text instead |

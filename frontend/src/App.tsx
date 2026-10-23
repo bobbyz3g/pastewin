@@ -96,6 +96,7 @@ export default function App() {
     listRef = useRef<HTMLElement>(null),
     dialogRef = useRef<HTMLDialogElement>(null),
     detailRef = useRef<HTMLDialogElement>(null),
+    previewContentRef = useRef<HTMLDivElement>(null),
     noticeTimer = useRef<ReturnType<typeof setTimeout>>(),
     scrollTimer = useRef<ReturnType<typeof setTimeout>>();
   const notify = useCallback((text: string, error = false) => {
@@ -221,10 +222,12 @@ export default function App() {
       active = false;
     };
   }, [settings]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const d = detailRef.current;
-    if (details && !d?.open) d?.showModal();
-    else if (!details && d?.open) d.close();
+    if (details && d && !d.open) {
+      d.showModal();
+      previewContentRef.current?.focus({ preventScroll: true });
+    } else if (!details && d?.open) d.close();
   }, [details]);
   useLayoutEffect(() => {
     if (following.current) listRef.current?.scrollTo({ top: 0 });
@@ -278,7 +281,33 @@ export default function App() {
   }, [selected, deleteEntry]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.isComposing || settings || details || contextMenu) return;
+      if (e.isComposing || settings || contextMenu) return;
+      if (e.key === " ") {
+        const target = e.target;
+        if (
+          e.ctrlKey ||
+          e.altKey ||
+          e.shiftKey ||
+          e.metaKey ||
+          !(target instanceof HTMLElement) ||
+          target.isContentEditable ||
+          target.closest("input, textarea, select")
+        )
+          return;
+        if (details) {
+          e.preventDefault();
+          if (!e.repeat) {
+            detailRef.current?.close();
+            setDetails(false);
+            listRef.current?.focus({ preventScroll: true });
+          }
+        } else if (listRef.current?.contains(target) && selectedItem) {
+          e.preventDefault();
+          if (!e.repeat) setDetails(true);
+        }
+        return;
+      }
+      if (details) return;
       if (e.key === "Delete") {
         const target = e.target;
         const editing =
@@ -339,6 +368,7 @@ export default function App() {
     query,
     page,
     selected,
+    selectedItem,
     copy,
     paste,
     deleteSelected,
@@ -671,7 +701,7 @@ export default function App() {
             ? `${entry.hasImage ? imageInfo(entry) : t("{count} 字符", { count: entry.characters.toLocaleString(language) })} · ${time(entry.updatedAt, language)}`
             : t("正在读取…")}
         </div>
-        <div className="preview-content">
+        <div className="preview-content" ref={previewContentRef} tabIndex={-1}>
           {details && !entry && <p role="status">{t("读取中")}</p>}
           {details && entry?.hasImage && <Picture entry={entry} />}
           {entry && entry.characters > 0 && (
