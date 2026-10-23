@@ -1,136 +1,178 @@
-# PasteWin Glass Design
+# PasteWin Liquid Glass Design
 
-Apple 风格的玻璃材质设计系统，为 PasteWin 带来现代、精致的视觉体验。
+基于 Windows Acrylic 材质的 Liquid Glass 设计系统，为 PasteWin 带来现代、轻盈的视觉体验。
 
 ## 设计理念
 
-**材质驱动的层次感**  
-通过不同透明度和模糊强度的玻璃层建立空间关系，而非依赖厚重的边框和阴影。
+**原生材质驱动**  
+使用 Windows 原生 Acrylic 材质（较旧系统回退为模糊背景），通过浅蓝紫半透明层和不同不透明度建立空间层次。
 
-**克制的视觉语言**  
-避免过度装饰，让每个元素都有明确的功能目的。
+**窄幅浮动面板**  
+类似 PasteNow 的快速访问体验：单列布局、圆角卡片、蓝色选中边框，默认 360×680px，最小 320×420px。
+
+**功能优先的视觉语言**  
+内容卡片保持较高不透明度以便阅读，支持减少透明度和高对比度设置，确保可访问性。
 
 ## 核心设计决策
 
+### 窗口尺寸
+
+- **默认**: 360×680px（窄幅单列）
+- **最小**: 320×420px
+- **布局**: 单列圆角卡片堆叠
+
 ### 颜色系统
 
-```css
---accent-blue: #007AFF           /* iOS 标准蓝 */
---text-primary: #1d1d1f          /* 深灰文本 */
---text-secondary: #86868b        /* 次要信息 */
---text-tertiary: #c7c7cc         /* 弱化文本 */
-
---glass-bg: rgba(245,245,250,0.72)      /* 主背景 - 72% 透明 */
---glass-card: rgba(255,255,255,0.65)    /* 卡片层 - 65% 透明 */
---glass-selected: rgba(0,122,255,0.12)  /* 选中态 - 12% 蓝色 */
---glass-toolbar: rgba(249,249,251,0.88) /* 工具栏 - 88% 透明 */
-```
-
-### 玻璃效果实现
+**浅蓝紫色调**（Liquid Glass 主题）
 
 ```css
-backdrop-filter: blur(40px) saturate(180%);
--webkit-backdrop-filter: blur(40px) saturate(180%);
+--accent-blue: #5B7FFF           /* 浅蓝紫强调色 */
+--text-primary: #1a1a2e          /* 深色文本 */
+--text-secondary: #6b7280        /* 次要信息 */
+--text-tertiary: #9ca3af         /* 弱化文本 */
+
+--glass-bg: rgba(240,240,255,0.75)      /* 浅蓝紫半透明底层 */
+--glass-card: rgba(255,255,255,0.85)    /* 卡片层 - 较高不透明度 */
+--glass-selected: rgba(91,127,255,0.15) /* 选中态 - 蓝色光晕 */
+--glass-control: rgba(248,248,252,0.90) /* 控制栏背景 */
 ```
 
-- **40px 模糊**：足够的模糊半径让背景内容柔和化，但仍可辨识
-- **180% 饱和度**：增强背景色彩，让玻璃效果更生动
-- **分层透明度**：主窗口 72%，卡片 65%，工具栏 88%
+### Windows Acrylic 材质
+
+原生 Acrylic 通过 Wails 窗口属性启用：
+
+- **Acrylic 背景**：Windows 10/11 原生毛玻璃效果
+- **回退方案**：较旧系统使用 CSS `backdrop-filter` 模拟
+- **浅色主题**：保持文字与底层材质一致
+
+浏览器端折射与混合模式：
+
+```css
+backdrop-filter: blur(32px) saturate(150%);
+-webkit-backdrop-filter: blur(32px) saturate(150%);
+```
+
+- **32px 模糊**：柔和背景，保持可辨识度
+- **150% 饱和度**：增强浅蓝紫色调
+- **分层不透明度**：主窗口 75%，卡片 85%（阅读优先），控制栏 90%
 
 ### 圆角系统
 
 ```css
---radius-sm: 6px    /* 小元素：按钮、输入框 */
---radius-md: 10px   /* 中等：菜单、卡片 */
---radius-lg: 12px   /* 大元素：dialog、主窗口 */
---radius-xl: 16px   /* 窗口外框 */
+--radius-sm: 8px    /* 小元素：按钮 */
+--radius-md: 12px   /* 中等：输入框、胶囊分类 */
+--radius-lg: 16px   /* 大元素：卡片、dialog */
+--radius-xl: 20px   /* 窗口外框 */
 ```
 
-接近 iOS 的圆角比例，营造柔和、亲和的视觉感受。
+较大的圆角营造柔和、现代的视觉感受，适配窄幅面板。
 
 ### 阴影系统
 
 ```css
---shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02)
---shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)
---shadow-lg: 0 12px 32px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.06)
+--shadow-sm: 0 2px 4px rgba(91,127,255,0.06)
+--shadow-md: 0 4px 12px rgba(91,127,255,0.1), 0 2px 4px rgba(0,0,0,0.04)
+--shadow-lg: 0 8px 24px rgba(91,127,255,0.12), 0 4px 8px rgba(0,0,0,0.06)
 ```
 
-轻量的双层阴影，营造自然的深度感。
+蓝紫色调的轻量阴影，与材质主题一致。
 
 ### 动画曲线
 
 ```css
-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 ```
 
-Apple 标准的 ease-out 曲线，响应迅速但不生硬。
+流畅的 ease-out 曲线，响应迅速且自然。
 
 ## 关键交互状态
 
-### 按钮
-- **Hover**: 背景 `rgba(0,0,0,0.04)`
-- **Active**: `scale(0.96)` 缩放反馈
-- **Disabled**: `opacity: 0.4`
+### 胶囊分类按钮
+- **默认**: 半透明背景 + 圆角胶囊
+- **Hover**: 背景加深
+- **Active**: 蓝紫色填充 + 白色文字
 
 ### 卡片
-- **默认**: 65% 白色 + 10px 模糊
-- **Hover**: 80% 白色 + 上浮 1px
-- **Selected**: 12% 蓝色背景 + 2px 蓝色光环
+- **默认**: 85% 白色（高可读性）+ 轻阴影
+- **Hover**: 轻微上浮
+- **Selected**: 蓝色边框 + 15% 蓝紫色背景光晕
+- **键盘聚焦**: 保持选中边框可见
 
 ### 搜索框
-- **默认**: 50% 白色 + 轻边框
-- **Focus**: 90% 白色 + 蓝色边框 + 3px 扩散光晕
+- **默认**: 半透明白色 + 轻边框
+- **Focus**: 高不透明度 + 蓝色边框 + 扩散光晕
 
-## 独特性分析
+### 悬浮操作栏
+- **位置**: 绝对定位于底部，覆盖列表
+- **背景**: 90% 不透明白色 + 模糊
+- **按钮**: 圆角图标按钮 + hover 反馈
+- **行为**: 仅在有选中记录时显示
 
-**避免的 AI 设计模板特征：**
-- ❌ 奶油色背景 (#F4F1EA) + 陶土色强调 (#D97757)
-- ❌ 纯黑背景 + 荧光绿/红色强调
-- ❌ 报纸式布局 + 发际线边框
-- ❌ 全大写标签、中点分隔符 (A · B · C)
-- ❌ 统一圆角的 SaaS 卡片堆叠
+### 右键菜单
+- **背景**: 高不透明度白色 + 模糊 + 阴影
+- **保持窗口内**: 自动调整位置
+- **关闭时机**: 点击外部、滚动、失焦、重新唤起
 
-**我们的特点：**
-- ✅ 材质透明度驱动的层次
-- ✅ iOS 色彩系统（#007AFF）
-- ✅ 功能化的视觉结构
-- ✅ 克制的动效（只在交互反馈时出现）
+## 布局特点
 
-## 文件结构
+### 顶部控制栏
+- 搜索框、设置、隐藏按钮
+- 胶囊分类（全部/收藏）+ 可点击的暂停/记录状态
+- 搜索时显示匹配数量
+
+### 主内容区
+- 单列卡片堆叠
+- 文本卡片：显示预览（最多 180 字符）
+- 图片卡片：缩略图 + 尺寸 + 大小信息
+- 混合卡片：同时显示文字和图片，默认操作文字
+
+### 底部操作栏
+- 仅在有选中记录时显示
+- 悬浮于列表上方（绝对定位）
+- 收藏/取消收藏、删除按钮
+- 列表保留底部滚动留白和 scroll-padding
+
+### 弹窗
+- 设置弹窗：语言选择、开机启动、容量说明、版本信息
+- 预览弹窗：按空格打开/关闭，全文或原图显示
+- 所有弹窗内 Esc 先关闭弹窗再隐藏主窗口
+
+## 可访问性
+
+- **高对比度支持**: 自动检测并适配系统高对比度模式
+- **减少透明度**: 响应系统"减少透明度"设置，提高不透明度
+- **键盘导航**: 完整的方向键、Enter、Space、Delete、Esc 支持
+- **焦点可见**: 选中边框在所有状态下保持清晰
+- **屏幕阅读器**: 语义化 HTML 和 ARIA 标签（待完善）
+
+## 设计资源
 
 ```
-frontend/src/
-├── style.css           # 当前应用的玻璃设计
-├── style-glass.css     # 玻璃设计源文件（备份）
-└── style-original.css  # 原始设计（可恢复）
+docs/design-reference/       # Figma 参考适配原始材料
+frontend/src/style.css       # 主样式文件
+frontend/src/liquid-glass.css # Liquid Glass 专用样式
+frontend/src/App.tsx         # 主界面组件
 ```
 
-## 切换设计
-
-恢复原设计：
-```bash
-cp frontend/src/style-original.css frontend/src/style.css
-```
-
-应用玻璃设计：
-```bash
-cp frontend/src/style-glass.css frontend/src/style.css
-```
+Figma 参考适配集中在 `liquid-glass.css`，包含按钮、悬浮菜单和底部托盘的实现。折射与混合模式采用浏览器近似效果。
 
 ## 调整建议
 
 如需微调，重点参数：
 
 - **透明度**: 调整 `--glass-bg`、`--glass-card` 的 alpha 值
-- **模糊强度**: 修改 `backdrop-filter: blur(40px)` 的数值
+- **模糊强度**: 修改 `backdrop-filter: blur(32px)` 的数值
 - **强调色**: 替换 `--accent-blue` 和相关使用位置
 - **圆角**: 调整 `--radius-*` 变量
+- **窗口尺寸**: 修改默认 360×680 和最小 320×420
+
+**注意**: 浏览器预览不能代替原生材质检查。Windows Acrylic 效果只在原生窗口中呈现。
 
 ## 浏览器兼容性
 
-- ✅ Chromium/Edge (WebView2)
-- ✅ Safari
-- ⚠️ Firefox 需开启 `layout.css.backdrop-filter.enabled`
+- ✅ WebView2 (Chromium/Edge) - 完全支持
+- ✅ Windows 10/11 Acrylic - 原生支持
+- ⚠️ 较旧系统 - CSS backdrop-filter 回退
+- ℹ️ 开发预览 (Chrome/Edge) - 无原生 Acrylic，仅 CSS 模拟
 
-PasteWin 使用 WebView2，完全支持 backdrop-filter。
+PasteWin 使用 Wails v3 + WebView2，在 Windows 10/11 上提供原生 Acrylic 材质体验。
