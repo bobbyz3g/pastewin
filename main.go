@@ -3,13 +3,18 @@ package main
 import (
 	"bytes"
 	"embed"
+	"encoding/json"
 	"image"
 	"image/color"
 	"image/png"
-	"log"
+	"log/slog"
 	"os"
+	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"slices"
 
+	"pastewin/internal/diagnostics"
 	"pastewin/internal/startup"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -19,7 +24,40 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
-func main() {
+//go:embed build/windows/info.json
+var buildMetadata []byte
+
+func main() { os.Exit(run()) }
+
+func run() int {
+	dir, err := dataDirectory()
+	if err == nil {
+		logs, openErr := diagnostics.Open(filepath.Join(dir, "logs"))
+		if openErr == nil {
+			slog.SetDefault(logs.Logger())
+			defer logs.Close()
+		} else {
+			slog.Error("log_init_failed", "error", openErr)
+		}
+	} else {
+		slog.Error("data_directory_failed", "error", err)
+	}
+	var version struct {
+		Fixed struct {
+			Version string `json:"file_version"`
+		} `json:"fixed"`
+	}
+	_ = json.Unmarshal(buildMetadata, &version)
+	revision := ""
+	if info, ok := debug.ReadBuildInfo(); ok {
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				revision = setting.Value
+			}
+		}
+	}
+	slog.Info("app_start", "version", version.Fixed.Version, "revision", revision, "go", runtime.Version(), "os", runtime.GOOS, "arch", runtime.GOARCH, "pid", os.Getpid())
+	defer slog.Info("app_stop")
 	service := &ClipboardService{}
 	app := application.New(application.Options{
 		Name: "PasteWin", Description: "本地剪贴板工作台", Icon: trayIcon(),
@@ -78,14 +116,17 @@ func main() {
 		}
 		if err := app.GlobalShortcut.Register("Ctrl+Shift+V", service.show); err != nil {
 			service.stateMu.Lock()
+			slog.Warn("hotkey_register_failed", "error", err)
 			service.hotkeyError = "快捷键已被占用，请从托盘打开面板"
 			service.stateMu.Unlock()
 			app.Event.Emit("status:changed")
 		}
 	})
 	if err := app.Run(); err != nil {
-		log.Fatal(err)
+		slog.Error("app_run_failed", "error", err)
+		return 1
 	}
+	return 0
 }
 
 func trayIcon() []byte {

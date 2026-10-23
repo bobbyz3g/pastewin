@@ -6,11 +6,13 @@ PasteWin is a local clipboard history tool for Windows. Save copied text and ima
 
 PasteWin is an early-stage project. The application supports English and Simplified Chinese. The installer currently uses Chinese UI text.
 
+Source app icons are shown for newly captured records when Windows can identify the clipboard owner. If an application publishes without an owner window, PasteWin uses the foreground application observed at the matching clipboard event as a best-effort fallback. Icons are loaded lazily by a separate worker and cached per application; unavailable icons and older records keep the default content icon. Browser copies show the browser icon, not website icons. WebView2 copies are resolved to their host application in the background. Each capture updates the source normally; unknown sources or unavailable icons use the default content icon. Application executable paths are stored only in the local database.
+
 ## Features
 
 - **Text and image history** — keep plain text and static bitmap images across restarts, with duplicate detection.
 - **Quick access** — open a compact floating panel with **Ctrl+Shift+V**, search text, and select a record.
-- **Glass appearance** — a translucent window with glass buttons, pill-shaped navigation, a frosted context menu, and a floating action tray over the scrollable list, with no bottom fade overlay. Capture status appears at the top. Search counts appear above results. Readable cards keep clipboard content clear. Background effects vary with Windows version and system settings.
+- **Glass appearance** — a translucent window with glass buttons, pill-shaped navigation, a frosted context menu, and a floating action tray over the scrollable list, with no bottom fade overlay. Capture status appears at the top. Search counts appear above results. Cards show the time for today or a YYYY/MM/DD date on the right, with vertically centered icons. Background effects vary with Windows version and system settings.
 - **Paste into your application** — paste at the cursor in the window you were using before opening PasteWin.
 - **Favorites and cleanup** — keep useful records, delete individual items, or clear records that are not favorites.
 - **Background operation** — record from the tray, pause capture, or enable optional startup at Windows sign-in.
@@ -87,3 +89,9 @@ Contributions are welcome. The [development guide](docs/development.md) explains
 ## License
 
 PasteWin is licensed under the [MIT License](LICENSE). Third-party dependencies retain their respective licenses.
+
+## Diagnostic logs
+
+Local JSON Lines logs are stored in `%APPDATA%\PasteWin\logs` (or `logs` under `PASTEWIN_DATA_DIR`). Files append within each process, rotate daily and at 10 MiB, and retain today plus the preceding six local calendar days. Expired files are removed on startup, rotation, and hourly while running. Process IDs in filenames keep separate instances from writing the same file.
+
+Logs include application version/startup/shutdown, service errors, clipboard source PID/executable path and identification method, and icon extraction/fallback results. Clipboard text, images and search queries are not logged. Writes use a bounded asynchronous queue; overload drops diagnostic records and records a dropped-count summary instead of blocking capture. Normal exit drains accepted records; abrupt termination can lose pending records. Logs stay local and are not uploaded. Restart PasteWin to enable logging in a newly built version, then reproduce the issue.

@@ -144,7 +144,7 @@ func TestOldDatabaseMigrationPreservesTextAndSettings(t *testing.T) {
 	s.Pin(id, true)
 	s.SetPaused(true)
 	// Version zero has exactly the original clips/settings schema.
-	if _, err = s.db.Exec(`DROP TABLE clip_images;PRAGMA user_version=0`); err != nil {
+	if _, err = s.db.Exec(`DROP TABLE clip_images; DROP TRIGGER prune_source_delete; DROP TRIGGER prune_source_update; DROP INDEX clips_source; ALTER TABLE clips DROP COLUMN source_key; DROP TABLE app_sources; PRAGMA user_version=0`); err != nil {
 		t.Fatal(err)
 	}
 	s.Close()
@@ -160,7 +160,7 @@ func TestOldDatabaseMigrationPreservesTextAndSettings(t *testing.T) {
 	if err = s.AddContent("", testImage(t, 60)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = s.db.Exec(`PRAGMA user_version=2`); err != nil {
+	if _, err = s.db.Exec(`PRAGMA user_version=3`); err != nil {
 		t.Fatal(err)
 	}
 	if newer, err := Open(path); err == nil {

@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	"pastewin/internal/appicon"
 	"pastewin/internal/clipimage"
 	"pastewin/internal/history"
 	"pastewin/internal/native"
@@ -29,6 +31,7 @@ type ClipboardService struct {
 	updateTrayLanguage func(string)
 	window             *application.WebviewWindow
 	store              *history.Store
+	icons              *appicon.Cache
 	monitor            *native.Monitor
 	cancel             context.CancelFunc
 	ctx                context.Context
@@ -46,14 +49,22 @@ type ClipboardService struct {
 	captures           chan captureJob
 }
 
-func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
+func dataDirectory() (string, error) {
 	dir := os.Getenv("PASTEWIN_DATA_DIR")
-	if dir == "" {
-		base, err := os.UserConfigDir()
-		if err != nil {
-			return err
-		}
-		dir = filepath.Join(base, "PasteWin")
+	if dir != "" {
+		return dir, nil
+	}
+	base, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(base, "PasteWin"), nil
+}
+
+func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.ServiceOptions) error {
+	dir, err := dataDirectory()
+	if err != nil {
+		return err
 	}
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
@@ -73,6 +84,7 @@ func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.Ser
 		return err
 	}
 	s.monitor = m
+	s.icons = appicon.New(s.ctx, native.ApplicationIcon)
 	s.captures = make(chan captureJob, 1)
 	s.wg.Add(2)
 	go s.processCaptures()
@@ -103,6 +115,7 @@ func (s *ClipboardService) changed() {
 	}
 }
 func (s *ClipboardService) report(err error) {
+	slog.Error("service_error", "error", err)
 	if s.app != nil {
 		s.app.Event.Emit("app:error", err.Error())
 	}
@@ -143,6 +156,7 @@ func (s *ClipboardService) SetPaused(paused bool) error {
 	if err := s.store.SetPaused(paused); err != nil {
 		return err
 	}
+	slog.Info("capture_state", "paused", paused)
 	s.paused = paused
 	s.captureEpoch++
 	// Resuming must not capture data copied during a paused interval.

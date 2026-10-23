@@ -7,7 +7,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"log/slog"
+	"path/filepath"
 	"runtime"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -50,9 +53,10 @@ type windowClass struct {
 }
 
 type Monitor struct {
-	handle  uintptr
-	done    chan struct{}
-	Changes chan struct{}
+	foreground atomic.Uint64 // clipboard sequence (high 32 bits), event-time PID (low 32 bits)
+	handle     uintptr
+	done       chan struct{}
+	Changes    chan struct{}
 }
 
 // The listener owns a message-only window on one OS thread. No polling while idle.
@@ -69,6 +73,12 @@ func Watch(ctx context.Context) (*Monitor, error) {
 		proc := syscall.NewCallback(func(hwnd uintptr, msg uint32, wp, lp uintptr) uintptr {
 			switch msg {
 			case 0x031D:
+				seq := Sequence()
+				foreground, _, _ := user32.NewProc("GetForegroundWindow").Call()
+				pid := windowPID(foreground)
+				if Sequence() == seq {
+					m.foreground.Store(uint64(seq)<<32 | uint64(pid))
+				}
 				select {
 				case m.Changes <- struct{}{}:
 				default:
@@ -152,23 +162,38 @@ func format(name string) uintptr {
 func available(f uintptr) bool { r, _, _ := hasFormat.Call(f); return r != 0 }
 
 type Snapshot struct {
-	Sequence uint32
-	Text     string
-	Images   []clipimage.Encoded
-	Warning  error
+	SourcePID uint32
+	Sequence  uint32
+	Source    string
+	Text      string
+	Images    []clipimage.Encoded
+	Warning   error
 }
 
 // ReadSnapshot copies bounded representations while holding the clipboard. No
 // image decoding or encoding occurs until after CloseClipboard.
-func (m *Monitor) ReadSnapshot() (Snapshot, error) {
-	var result Snapshot
+func (m *Monitor) ReadSnapshot() (result Snapshot, err error) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 	if err := open(m.handle); err != nil {
 		return result, err
 	}
-	defer closeClipboard.Call()
+	owner, _, _ := user32.NewProc("GetClipboardOwner").Call()
+	pid := windowPID(owner)
+	sourceMethod := "owner"
+	defer func() {
+		closeClipboard.Call()
+		if result.Text != "" || len(result.Images) > 0 {
+			result.SourcePID = pid
+			result.Source = processPath(pid)
+			slog.Info("clipboard_source", "sequence", result.Sequence, "owner_present", owner != 0, "pid", pid, "method", sourceMethod, "source_app", filepath.Base(result.Source), "source_path", result.Source, "identified", result.Source != "")
+		}
+	}()
 	result.Sequence = Sequence()
+	if owner == 0 {
+		pid = m.fallbackSourcePID(result.Sequence)
+		sourceMethod = "foreground_fallback"
+	}
 	// Respect Windows' explicit clipboard-history opt-out formats.
 	if available(format("ExcludeClipboardContentFromMonitorProcessing")) {
 		return result, nil

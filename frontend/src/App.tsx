@@ -36,6 +36,17 @@ const time = (value: number, language: string) =>
     minute: "2-digit",
   });
 const isURL = (text: string) => /^https?:\/\/\S+$/.test(text.trim());
+const recordTime = (value: number, language: string) => {
+  const date = new Date(value);
+  const today = new Date();
+  if (
+    date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate()
+  )
+    return time(value, language);
+  return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
+};
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
 
@@ -70,6 +81,31 @@ function Picture({
       draggable={false}
       onError={() => setFailed(true)}
     />
+  );
+}
+
+function SourceIcon({ entry }: { entry: Entry }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [entry.sourceKey]);
+  if (entry.sourceKey && !failed)
+    return (
+      <img
+        className="source-icon"
+        src={`/source-icon/${entry.sourceKey}.png`}
+        alt=""
+        title={entry.sourceName}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        onError={() => setFailed(true)}
+      />
+    );
+  return entry.hasImage ? (
+    <ImageIcon size={22} strokeWidth={1.5} />
+  ) : isURL(entry.preview) ? (
+    <Link2 size={22} strokeWidth={1.5} />
+  ) : (
+    <FileText size={22} strokeWidth={1.5} />
   );
 }
 
@@ -559,18 +595,14 @@ export default function App() {
             >
               <span className="clip-meta">
                 <span className="clip-kind">
-                  {item.hasImage ? (
-                    <ImageIcon size={22} strokeWidth={1.5} />
-                  ) : isURL(item.preview) ? (
-                    <Link2 size={22} strokeWidth={1.5} />
-                  ) : (
-                    <FileText size={22} strokeWidth={1.5} />
-                  )}
+                  <SourceIcon entry={item} />
                   {item.pinned && (
                     <Star size={11} className="starred" fill="currentColor" />
                   )}
                 </span>
-                <time>{time(item.updatedAt, language)}</time>
+                <time dateTime={new Date(item.updatedAt).toISOString()}>
+                  {recordTime(item.updatedAt, language)}
+                </time>
               </span>
               {item.hasImage && (
                 <>

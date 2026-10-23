@@ -371,7 +371,7 @@ kbd {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   grid-template-rows: 16px auto;
-  align-content: start;
+  align-content: stretch;
   align-items: start;
   gap: 6px 11px;
   width: 100%;
@@ -419,6 +419,8 @@ kbd {
 .clip-meta time {
   grid-column: 2;
   grid-row: 1;
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .clip-kind {
@@ -427,6 +429,7 @@ kbd {
   place-items: center;
   grid-column: 1;
   grid-row: 1 / span 2;
+  align-self: center;
   width: 36px;
   height: 36px;
   border-radius: 12px;
@@ -441,6 +444,21 @@ kbd {
 
 .clip.selected .clip-kind {
   color: var(--accent-blue);
+}
+
+.source-icon {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.clip.has-image .clip-kind {
+  grid-row: 1 / span 3;
+}
+
+.clip.has-image:has(.clip-text) .clip-kind {
+  grid-row: 1 / span 4;
 }
 
 .clip-kind .starred {

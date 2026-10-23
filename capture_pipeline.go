@@ -66,6 +66,7 @@ func (s *ClipboardService) processCaptures() {
 				continue
 			}
 			img, err := clipimage.Prepare(job.snapshot.Images)
+			job.snapshot.Source = native.ResolveSourceHost(job.snapshot.SourcePID, job.snapshot.Source)
 			s.commitCapture(job, img, err)
 		}
 	}
@@ -84,7 +85,7 @@ func (s *ClipboardService) commitCapture(job captureJob, img *clipimage.Image, d
 	if job.snapshot.Warning != nil {
 		s.report(job.snapshot.Warning)
 	}
-	if err := s.store.AddContent(job.snapshot.Text, img); err != nil {
+	if err := s.store.AddContent(job.snapshot.Text, img, job.snapshot.Source); err != nil {
 		s.report(err)
 		return
 	}

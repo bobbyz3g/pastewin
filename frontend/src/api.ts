@@ -2,6 +2,8 @@ import * as service from "../bindings/pastewin/clipboardservice";
 import { Events } from "@wailsio/runtime";
 
 export interface Entry {
+  sourceKey?: string;
+  sourceName?: string;
   id: number;
   text: string;
   preview: string;

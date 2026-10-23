@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +21,8 @@ const MaxEntries = 500
 const MaxImageBytes = 256 << 20
 
 type Entry struct {
+	SourceKey   string `json:"sourceKey"`
+	SourceName  string `json:"sourceName"`
 	ID          int64  `json:"id"`
 	Text        string `json:"text"`
 	Preview     string `json:"preview"`
@@ -75,10 +78,10 @@ func migrate(db *sql.DB) error {
 	if err := db.QueryRow(`PRAGMA user_version`).Scan(&version); err != nil {
 		return err
 	}
-	if version > 1 {
+	if version > 2 {
 		return errors.New("历史数据库由更新版本创建，请升级 PasteWin")
 	}
-	if version == 1 {
+	if version == 2 {
 		return nil
 	}
 	tx, err := db.Begin()
@@ -86,11 +89,26 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	defer tx.Rollback()
-	_, err = tx.Exec(`CREATE TABLE clip_images (
+	if version == 0 {
+		_, err = tx.Exec(`CREATE TABLE clip_images (
 	 clip_id INTEGER PRIMARY KEY REFERENCES clips(id) ON DELETE CASCADE,
 	 png BLOB NOT NULL, thumbnail BLOB NOT NULL,
 	 width INTEGER NOT NULL, height INTEGER NOT NULL, byte_size INTEGER NOT NULL);
 	 PRAGMA user_version=1;`)
+		if err != nil {
+			return err
+		}
+	}
+	_, err = tx.Exec(`CREATE TABLE app_sources (key TEXT PRIMARY KEY, path TEXT NOT NULL, name TEXT NOT NULL);
+ ALTER TABLE clips ADD COLUMN source_key TEXT NOT NULL DEFAULT '';
+ CREATE INDEX clips_source ON clips(source_key);
+ CREATE TRIGGER prune_source_delete AFTER DELETE ON clips BEGIN
+ DELETE FROM app_sources WHERE key=OLD.source_key AND NOT EXISTS(SELECT 1 FROM clips WHERE source_key=OLD.source_key);
+ END;
+ CREATE TRIGGER prune_source_update AFTER UPDATE OF source_key ON clips BEGIN
+ DELETE FROM app_sources WHERE key=OLD.source_key AND NOT EXISTS(SELECT 1 FROM clips WHERE source_key=OLD.source_key);
+ END;
+ PRAGMA user_version=2;`)
 	if err != nil {
 		return err
 	}
@@ -104,7 +122,7 @@ func (s *Store) Add(text string) error {
 	return s.AddContent(text, nil)
 }
 
-func (s *Store) AddContent(text string, img *clipimage.Image) error {
+func (s *Store) AddContent(text string, img *clipimage.Image, sources ...string) error {
 	if strings.TrimSpace(text) == "" {
 		if img == nil {
 			return nil
@@ -134,9 +152,19 @@ func (s *Store) AddContent(text string, img *clipimage.Image) error {
 	if img != nil {
 		key = "image:" + img.Hash + ":" + key
 	}
+	sourceKey := ""
+	if len(sources) > 0 && sources[0] != "" {
+		path := sources[0]
+		digest := sha256.Sum256([]byte(strings.ToLower(path)))
+		sourceKey = hex.EncodeToString(digest[:])
+		name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+		if _, err = tx.Exec(`INSERT INTO app_sources(key,path,name) VALUES(?,?,?) ON CONFLICT(key) DO NOTHING`, sourceKey, path, name); err != nil {
+			return err
+		}
+	}
 	now := time.Now().UnixMilli()
-	_, err = tx.Exec(`INSERT INTO clips(hash,text,characters,created_at,updated_at) VALUES(?,?,?,?,?)
-	ON CONFLICT(hash) DO UPDATE SET updated_at=excluded.updated_at`, key, text, utf8.RuneCountInString(text), now, now)
+	_, err = tx.Exec(`INSERT INTO clips(hash,text,characters,created_at,updated_at,source_key) VALUES(?,?,?,?,?,?)
+	ON CONFLICT(hash) DO UPDATE SET updated_at=excluded.updated_at,source_key=excluded.source_key`, key, text, utf8.RuneCountInString(text), now, now, sourceKey)
 	if err != nil {
 		return err
 	}
@@ -204,7 +232,7 @@ func (s *Store) List(query string, pinned bool, offset int) (Page, error) {
 	}
 	args = append(args, 50, offset)
 	rows, err := s.db.Query(`SELECT id,substr(text,1,180),characters,created_at,updated_at,pinned,
-	 i.clip_id IS NOT NULL,COALESCE(i.width,0),COALESCE(i.height,0),COALESCE(i.byte_size,0)
+	 source_key,COALESCE((SELECT name FROM app_sources WHERE key=source_key),''),i.clip_id IS NOT NULL,COALESCE(i.width,0),COALESCE(i.height,0),COALESCE(i.byte_size,0)
 	 FROM clips LEFT JOIN clip_images i ON i.clip_id=clips.id`+where+` ORDER BY updated_at DESC,id DESC LIMIT ? OFFSET ?`, args...)
 	if err != nil {
 		return page, err
@@ -212,7 +240,7 @@ func (s *Store) List(query string, pinned bool, offset int) (Page, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var entry Entry
-		if err := rows.Scan(&entry.ID, &entry.Preview, &entry.Characters, &entry.CreatedAt, &entry.UpdatedAt, &entry.Pinned, &entry.HasImage, &entry.ImageWidth, &entry.ImageHeight, &entry.ImageBytes); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.Preview, &entry.Characters, &entry.CreatedAt, &entry.UpdatedAt, &entry.Pinned, &entry.SourceKey, &entry.SourceName, &entry.HasImage, &entry.ImageWidth, &entry.ImageHeight, &entry.ImageBytes); err != nil {
 			return page, err
 		}
 		page.Entries = append(page.Entries, entry)
@@ -223,8 +251,8 @@ func (s *Store) List(query string, pinned bool, offset int) (Page, error) {
 func (s *Store) Get(id int64) (Entry, error) {
 	var e Entry
 	err := s.db.QueryRow(`SELECT id,text,characters,created_at,updated_at,pinned,
-	 i.clip_id IS NOT NULL,COALESCE(i.width,0),COALESCE(i.height,0),COALESCE(i.byte_size,0)
-	 FROM clips LEFT JOIN clip_images i ON i.clip_id=clips.id WHERE id=?`, id).Scan(&e.ID, &e.Text, &e.Characters, &e.CreatedAt, &e.UpdatedAt, &e.Pinned, &e.HasImage, &e.ImageWidth, &e.ImageHeight, &e.ImageBytes)
+	 source_key,COALESCE((SELECT name FROM app_sources WHERE key=source_key),''),i.clip_id IS NOT NULL,COALESCE(i.width,0),COALESCE(i.height,0),COALESCE(i.byte_size,0)
+	 FROM clips LEFT JOIN clip_images i ON i.clip_id=clips.id WHERE id=?`, id).Scan(&e.ID, &e.Text, &e.Characters, &e.CreatedAt, &e.UpdatedAt, &e.Pinned, &e.SourceKey, &e.SourceName, &e.HasImage, &e.ImageWidth, &e.ImageHeight, &e.ImageBytes)
 	if errors.Is(err, sql.ErrNoRows) {
 		return e, errors.New("这条记录已被删除")
 	}
@@ -297,4 +325,10 @@ func (s *Store) SetLanguage(language string) error {
 	}
 	_, err := s.db.Exec(`INSERT INTO settings(key,value) VALUES('language',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value`, language)
 	return err
+}
+
+func (s *Store) SourcePath(key string) (string, error) {
+	var path string
+	err := s.db.QueryRow(`SELECT path FROM app_sources WHERE key=? AND EXISTS(SELECT 1 FROM clips WHERE source_key=?)`, key, key).Scan(&path)
+	return path, err
 }
