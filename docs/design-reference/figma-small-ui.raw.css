@@ -1,0 +1,300 @@
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px;
+gap: 25px;
+
+width: 970px;
+height: 60px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+align-self: stretch;
+flex-grow: 0;
+z-index: 1;
+
+
+/* Frame */
+
+/* Auto layout */
+display: flex;
+flex-direction: row;
+align-items: center;
+padding: 0px 30px;
+gap: 20px;
+
+width: 640px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* BG - Small UI */
+
+width: 80px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 0;
+flex-grow: 0;
+
+
+/* Fill + Shadow */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: linear-gradient(0deg, rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)), linear-gradient(0deg, rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)), linear-gradient(0deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)), rgba(0, 0, 0, 0.25);
+background-blend-mode: luminosity, plus-lighter, normal, normal;
+box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px rgba(0, 0, 0, 0.02);
+border-radius: 1000px;
+
+
+/* Glass Effect */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828, inset 0px 40px 30px -40px #E6E6E6;
+border-radius: 1000px;
+
+
+/* BG - Small UI */
+
+width: 80px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;
+
+
+/* Fill + Shadow */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: linear-gradient(0deg, rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)), linear-gradient(0deg, rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)), linear-gradient(0deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)), rgba(0, 0, 0, 0.25);
+background-blend-mode: luminosity, plus-lighter, normal, normal;
+box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px rgba(0, 0, 0, 0.02);
+border-radius: 1000px;
+
+
+/* Glass Effect */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828, inset 0px 40px 30px -40px #E6E6E6;
+border-radius: 1000px;
+
+
+/* BG - Small UI */
+
+width: 80px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 2;
+flex-grow: 0;
+
+
+/* Fill + Shadow */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: linear-gradient(0deg, rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)), linear-gradient(0deg, rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)), linear-gradient(0deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)), rgba(0, 0, 0, 0.25);
+background-blend-mode: luminosity, plus-lighter, normal, normal;
+box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px rgba(0, 0, 0, 0.02);
+border-radius: 1000px;
+
+
+/* Glass Effect */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828, inset 0px 40px 30px -40px #E6E6E6;
+border-radius: 1000px;
+
+
+/* BG - Small UI */
+
+width: 80px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 3;
+flex-grow: 0;
+
+
+/* Fill + Shadow */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: linear-gradient(0deg, rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)), linear-gradient(0deg, rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)), linear-gradient(0deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)), rgba(0, 0, 0, 0.25);
+background-blend-mode: luminosity, plus-lighter, normal, normal;
+box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px rgba(0, 0, 0, 0.02);
+border-radius: 1000px;
+
+
+/* Glass Effect */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828, inset 0px 40px 30px -40px #E6E6E6;
+border-radius: 1000px;
+
+
+/* BG - Small UI */
+
+width: 80px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 4;
+flex-grow: 0;
+
+
+/* Fill + Shadow */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: linear-gradient(0deg, rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)), linear-gradient(0deg, rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)), linear-gradient(0deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)), rgba(0, 0, 0, 0.25);
+background-blend-mode: luminosity, plus-lighter, normal, normal;
+box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px rgba(0, 0, 0, 0.02);
+border-radius: 1000px;
+
+
+/* Glass Effect */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828, inset 0px 40px 30px -40px #E6E6E6;
+border-radius: 1000px;
+
+
+/* BG - Small UI */
+
+width: 80px;
+height: 48px;
+
+
+/* Inside auto layout */
+flex: none;
+order: 5;
+flex-grow: 0;
+
+
+/* Fill + Shadow */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: linear-gradient(0deg, rgba(248, 248, 248, 0.2), rgba(248, 248, 248, 0.2)), linear-gradient(0deg, rgba(68, 68, 68, 0.6), rgba(68, 68, 68, 0.6)), linear-gradient(0deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)), rgba(0, 0, 0, 0.25);
+background-blend-mode: luminosity, plus-lighter, normal, normal;
+box-shadow: 1.25px 0px 0px -0.75px #D0D0D0, -1.25px 0px 0px -0.75px #D0D0D0, 0px 0px 0px 0.5px #E8E8E8, 0px 8px 15px rgba(0, 0, 0, 0.02);
+border-radius: 1000px;
+
+
+/* Glass Effect */
+
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828, inset 0px 40px 30px -40px #E6E6E6;
+border-radius: 1000px;
+
+
+/* Small UI Dynamic (Over light background) */
+
+width: 270px;
+height: 60px;
+
+font-family: 'SF Pro';
+font-style: normal;
+font-weight: 510;
+font-size: 17px;
+line-height: 20px;
+display: flex;
+align-items: center;
+
+color: #000000;
+
+
+/* Inside auto layout */
+flex: none;
+order: 1;
+flex-grow: 0;

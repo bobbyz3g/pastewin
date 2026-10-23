@@ -10,7 +10,7 @@ PasteWin is an early-stage project. The application supports English and Simplif
 
 - **Text and image history** — keep plain text and static bitmap images across restarts, with duplicate detection.
 - **Quick access** — open a compact floating panel with **Ctrl+Shift+V**, search text, and select a record.
-- **Glass appearance** — a translucent window with pill-shaped navigation, capture status at the top, and a floating action toolbar at the bottom. Search counts appear above results. Readable cards keep clipboard content clear. Background effects vary with Windows version and system settings.
+- **Glass appearance** — a translucent window with glass buttons, pill-shaped navigation, a frosted context menu, and a floating action tray over the scrollable list, with no bottom fade overlay. Capture status appears at the top. Search counts appear above results. Readable cards keep clipboard content clear. Background effects vary with Windows version and system settings.
 - **Paste into your application** — paste at the cursor in the window you were using before opening PasteWin.
 - **Favorites and cleanup** — keep useful records, delete individual items, or clear records that are not favorites.
 - **Background operation** — record from the tray, pause capture, or enable optional startup at Windows sign-in.

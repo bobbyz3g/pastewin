@@ -28,6 +28,7 @@ import { useHistory } from "./useHistory";
 import { EntryMenu } from "./EntryMenu";
 import buildInfo from "../../build/windows/info.json";
 import "./style.css";
+import "./liquid-glass.css";
 
 const time = (value: number, language: string) =>
   new Date(value).toLocaleTimeString(language, {
@@ -58,9 +59,7 @@ function Picture({
     </span>
   ) : (
     <img
-      className={
-        thumbnail ? "clip-thumbnail checkerboard" : "preview-image checkerboard"
-      }
+      className={thumbnail ? "clip-thumbnail" : "preview-image checkerboard"}
       src={src}
       alt={t("图片，{width} × {height} 像素", {
         width: entry.imageWidth,
@@ -126,6 +125,7 @@ export default function App() {
     setPinned,
     setSelected,
   } = useHistory(fail);
+  const selectedItem = page.entries.find((item) => item.id === selected);
   const menuEntry =
     contextMenu && selected === contextMenu.id
       ? page.entries.find((item) => item.id === contextMenu.id)
@@ -597,25 +597,28 @@ export default function App() {
           className="icon-button"
           aria-label={t("查看内容")}
           title={t("查看内容")}
-          disabled={!entry}
+          disabled={!selectedItem}
           onClick={() => setDetails(true)}
         >
           <ScanText size={16} />
         </button>
         <button
-          className={`icon-button ${entry?.pinned ? "starred" : ""}`}
-          aria-label={entry?.pinned ? t("取消收藏") : t("收藏记录")}
-          title={entry?.pinned ? t("取消收藏") : t("收藏记录")}
-          disabled={busy || !entry}
-          onClick={() => entry && togglePin(entry)}
+          className={`icon-button ${selectedItem?.pinned ? "starred" : ""}`}
+          aria-label={selectedItem?.pinned ? t("取消收藏") : t("收藏记录")}
+          title={selectedItem?.pinned ? t("取消收藏") : t("收藏记录")}
+          disabled={busy || !selectedItem}
+          onClick={() => selectedItem && togglePin(selectedItem)}
         >
-          <Star size={15} fill={entry?.pinned ? "currentColor" : "none"} />
+          <Star
+            size={15}
+            fill={selectedItem?.pinned ? "currentColor" : "none"}
+          />
         </button>
         <button
           className="icon-button"
           aria-label={t("复制")}
           title={t("复制 · Ctrl+Enter")}
-          disabled={busy || !entry}
+          disabled={busy || !selectedItem}
           onClick={copy}
         >
           <Copy size={15} />
@@ -625,7 +628,7 @@ export default function App() {
           aria-label={t("删除记录")}
           title={t("删除记录 · Delete")}
           aria-keyshortcuts="Delete"
-          disabled={busy || !entry}
+          disabled={busy || !selectedItem}
           onClick={deleteSelected}
         >
           <Trash2 size={15} />
@@ -633,7 +636,7 @@ export default function App() {
         <span className="action-spacer" />
         <button
           className="paste-action"
-          disabled={busy || !entry || !status?.canPaste}
+          disabled={busy || !selectedItem || !status?.canPaste}
           onClick={paste}
           title={
             status?.canPaste
@@ -669,6 +672,7 @@ export default function App() {
             : t("正在读取…")}
         </div>
         <div className="preview-content">
+          {details && !entry && <p role="status">{t("读取中")}</p>}
           {details && entry?.hasImage && <Picture entry={entry} />}
           {entry && entry.characters > 0 && (
             <pre className="content-text" tabIndex={0}>
@@ -774,6 +778,21 @@ export default function App() {
             id="language-select"
             value={language}
             disabled={busy}
+            onKeyDown={(event) => {
+              // Customizable select pickers don't apply Home/End while closed.
+              // Preserve the native select shortcut used by keyboard users.
+              if (
+                (event.key !== "Home" && event.key !== "End") ||
+                event.currentTarget.matches(":open")
+              )
+                return;
+              event.preventDefault();
+              const value = event.key === "Home" ? "zh-CN" : "en";
+              void perform(async () => {
+                await setLanguage(value);
+                setNotice(null);
+              });
+            }}
             onChange={(event) => {
               const value = event.target.value;
               void perform(async () => {
@@ -788,29 +807,32 @@ export default function App() {
         </div>
         <div className="setting-row">
           <div>
-            <strong>{t("自动记录")}</strong>
-            <p>{t("运行时保存新复制的文字和图片。")}</p>
+            <strong id="capture-label">{t("自动记录")}</strong>
           </div>
           <button
-            className="secondary"
-            disabled={busy}
+            className="startup-switch"
+            role="switch"
+            aria-checked={status != null && !status.paused}
+            aria-labelledby="capture-label"
+            disabled={busy || !status}
             onClick={() =>
               void perform(() => api("SetPaused", !status?.paused))
             }
           >
-            {status?.paused ? t("继续记录") : t("暂停记录")}
+            <span className="switch-track" aria-hidden="true">
+              <span />
+            </span>
           </button>
         </div>
         <div className="setting-row">
           <div>
             <strong>{t("打开面板")}</strong>
           </div>
-          <kbd>Ctrl Shift V</kbd>
+          <kbd>Ctrl + Shift + V</kbd>
         </div>
         <div className="setting-row">
           <div>
             <strong id="autostart-label">{t("开机启动")}</strong>
-            <p id="autostart-description">{t("自动运行，不弹出窗口。")}</p>
             {autoStartError && (
               <p className="setting-error" role="alert">
                 {t("{error}。请关闭设置后重试。", {
@@ -824,7 +846,6 @@ export default function App() {
             role="switch"
             aria-checked={autoStart === true}
             aria-labelledby="autostart-label"
-            aria-describedby="autostart-description"
             disabled={busy || autoStart === null}
             onClick={() =>
               void perform(async () => {
@@ -842,15 +863,6 @@ export default function App() {
           >
             <span className="switch-track" aria-hidden="true">
               <span />
-            </span>
-            <span>
-              {autoStart === null
-                ? autoStartError
-                  ? t("读取失败")
-                  : t("读取中")
-                : autoStart
-                  ? t("已开启")
-                  : t("已关闭")}
             </span>
           </button>
         </div>
@@ -875,12 +887,13 @@ export default function App() {
           </div>
           <p>{t("保存复制过的文字和图片。")}</p>
         </section>
-        <div className="dialog-footer">
+        <div className={`dialog-footer ${confirmClear ? "confirm-clear" : ""}`}>
           {confirmClear ? (
             <>
               <span>{t("删除所有未收藏记录？无法恢复。")}</span>
               <button
                 className="secondary"
+                disabled={busy}
                 onClick={() => setConfirmClear(false)}
               >
                 {t("取消")}
@@ -902,6 +915,7 @@ export default function App() {
             <>
               <button
                 className="danger-text"
+                disabled={busy}
                 onClick={() => setConfirmClear(true)}
               >
                 <Trash2 size={15} />

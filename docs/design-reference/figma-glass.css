@@ -1,0 +1,105 @@
+/* Reference only; not imported by the application.
+ * Source: https://www.figma.com/design/ukxywQBo2Lxbiqq7CEE24l/macOS-27--Community-
+ * Inspected 2026-10-22. Rules below transcribe visible Figma properties;
+ * they are not a complete browser implementation of Figma's Glass renderer.
+ * figma-small-ui.raw.css preserves the user's original all-layer export.
+ */
+
+/* Materials > Liquid Glass - Medium > Light > Glass Effect.
+ * Parent variant: 483:9257, 160 x 160.
+ * Glass effect (Figma UI units, NOT CSS pixels unless otherwise specified):
+ * Light angle: 0deg; intensity: 25%; refraction: 70; depth: 30;
+ * dispersion: 20; frost: 16; splay: 20.
+ * Two enabled inner shadows; a third inner shadow is disabled.
+ * Shadow settings and layer blend mode still require inspection.
+ */
+.figma-medium-light-glass {
+  width: 160px;
+  height: 160px;
+  border-radius: 34px;
+  background: #ffffff;
+}
+
+/* Medium > Light selection colors:
+ * Fill + Shadow: #BFBFBF at 10%, #FFFFFF at 70%.
+ * Glass Effect: #FFFFFF at 100%.
+ * Layer compositing is not represented by the selection-colors list.
+ */
+
+/* Materials > Liquid Glass - Large > Light > Glass Effect
+ * Verified selected node: 4311:12663.
+ * Same visible geometry as Medium: 160 x 160, radius 34.
+ * Glass: angle 0deg, intensity 25%, refraction 70, depth 30,
+ * dispersion 20, frost 16, splay 20. Two enabled inner shadows;
+ * third inner shadow disabled. Values are Figma UI units.
+ */
+.figma-large-light-glass {
+  width: 160px;
+  height: 160px;
+  border-radius: 34px;
+  background: #ffffff;
+}
+
+/* Materials > Liquid Glass - Small > Light, Active=True, Primary.
+ * Front-to-back layer order: Glass Effect, Tint, White Backing, Fill + Shadow.
+ * Glass Effect: 48 x 48, radius 1000, white at 100%; three inner shadows.
+ * Glass: angle 0deg, intensity 25%, refraction 70, depth 30,
+ * dispersion 20, frost 6, splay 20.
+ * Tint uses Figma's Plus darker layer blend mode. No CSS equivalent is
+ * asserted here; do not silently replace it with a normal blue gradient.
+ */
+.figma-small-primary-tint {
+  position: absolute;
+  inset: -0.5px;
+  border-radius: 1000px;
+  background: #0088ff;
+}
+.figma-small-primary-white-backing {
+  position: absolute;
+  inset: -0.5px;
+  border-radius: 1000px;
+  background: #ffffff;
+  opacity: 0.94;
+}
+
+/* Menus > Light Examples > first Menu (Medium).
+ * Outer instance: vertical auto layout, gap 0, horizontal padding 12,
+ * vertical padding 5. BG references Menu Background, Mode=Light.
+ * Fill + Shadow radius: 12.
+ * Fill list, top to bottom: #D9D9D9 40%, #D9D9D9 55%.
+ * Per-fill blend modes have not yet been read; colors are stored separately.
+ * Four enabled drop shadows. First and fourth were opened and verified.
+ * The middle two must not be inferred from the generic Large export.
+ */
+.figma-menu-medium {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 5px 12px;
+}
+.figma-menu-light-reference {
+  border-radius: 12px;
+  --figma-fill-top: rgb(217 217 217 / 40%);
+  --figma-fill-bottom: rgb(217 217 217 / 55%);
+  --figma-shadow-first: 1.25px 0 0 -0.75px #dbdbdb;
+  --figma-shadow-fourth: 0 8px 48px rgb(0 0 0 / 25%);
+}
+
+/* Menu Bar and Dock > Desktop Templates > Dock > Light > Dock Background.
+ * Fill + Shadow reference geometry: 1152 x 55; radius 15.
+ * Fill list, top to bottom: white 8%, #1A1A1A 10%, #4D4D4D 30%.
+ * Per-fill blend modes have not yet been read.
+ * One enabled drop shadow; all its geometry and color verified below.
+ * Glass Effect: white 100%, radius 15, four enabled inner shadows.
+ * Glass: angle 0deg, intensity 10%, refraction 70, depth 30,
+ * dispersion 20, frost 16, splay 20. Figma UI units, not CSS blur radii.
+ * Inner-shadow numerical values still require inspection.
+ */
+.figma-dock-light-reference {
+  height: 55px;
+  border-radius: 15px;
+  --figma-fill-top: rgb(255 255 255 / 8%);
+  --figma-fill-middle: rgb(26 26 26 / 10%);
+  --figma-fill-bottom: rgb(77 77 77 / 30%);
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 25%);
+}

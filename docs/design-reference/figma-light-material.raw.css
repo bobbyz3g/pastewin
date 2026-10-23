@@ -1,0 +1,34 @@
+/* User-provided Figma CSS export, 2026-10-22.
+ * User tentatively identified this as Large; export itself only says Mode=Light.
+ * Preserve separately from independently inspected properties.
+ * Raw declarations below are reference text, not an importable stylesheet.
+ */
+
+/* Mode=Light */
+position: absolute;
+width: 160px;
+height: 160px;
+left: 20px;
+top: 20px;
+
+/* Fill + Shadow */
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+background: linear-gradient(0deg, rgba(191, 191, 191, 0.1), rgba(191, 191, 191, 0.1)), rgba(255, 255, 255, 0.7);
+background-blend-mode: darken, lighten;
+box-shadow: 1.25px 0px 0px -0.75px #DBDBDB, -1.25px 0px 0px -0.75px #DBDBDB, 0px 0px 0px 0.5px #DBDBDB, 0px 18px 48px rgba(0, 0, 0, 0.25);
+border-radius: 34px;
+
+/* Glass Effect */
+position: absolute;
+left: 0px;
+right: 0px;
+top: 0px;
+bottom: 0px;
+background: #FFFFFF;
+background-blend-mode: multiply;
+box-shadow: inset 0px 40px 10px -40px #282828, inset 0px -40px 10px -40px #282828;
+border-radius: 34px;

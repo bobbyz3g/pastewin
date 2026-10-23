@@ -109,6 +109,8 @@ kbd {
 }
 
 .app-shell {
+  position: relative;
+  --action-tray-clearance: 80px;
   height: 100dvh;
   min-height: 360px;
   display: flex;
@@ -324,18 +326,12 @@ kbd {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding: 4px 10px 24px;
+  padding: 4px 10px var(--action-tray-clearance);
   margin: 0 3px;
   scrollbar-gutter: stable;
-  scroll-padding-block: 4px 24px;
-  /* Fade the scroll boundary into the floating toolbar, keeping the final
-     card above the fade when scrolled fully into view. */
-  mask-image: linear-gradient(
-    to bottom,
-    #000 0,
-    #000 calc(100% - 20px),
-    transparent 100%
-  );
+  /* Let content scroll behind the tray, but keep keyboard-selected and
+     final records above it when scrolled into view. */
+  scroll-padding-block: 4px var(--action-tray-clearance);
 }
 
 /* WebKit - overlay 模式滚动条 */
@@ -432,7 +428,7 @@ kbd {
   grid-column: 1;
   grid-row: 1 / span 2;
   width: 36px;
-  height: 44px;
+  height: 36px;
   border-radius: 12px;
   border: 1px solid rgba(92, 126, 178, 0.08);
   background: linear-gradient(
@@ -853,6 +849,7 @@ dialog::backdrop {
 
 .setting-row {
   display: flex;
+  min-height: 71px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -877,6 +874,15 @@ dialog::backdrop {
 .setting-row button,
 .setting-row kbd {
   flex: none;
+}
+
+.setting-row kbd {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--text-primary);
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .setting-row > div {

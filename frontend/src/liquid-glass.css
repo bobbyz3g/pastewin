@@ -1,0 +1,345 @@
+/* Browser adaptation of docs/design-reference/figma-*.css.
+ * Figma's Glass refraction and Plus darker compositing are not CSS filters.
+ * Blur values and translucent highlights below are visual approximations;
+ * the source exports stay separate so they can be compared without alteration.
+ */
+:root {
+  --liquid-rim:
+    1.25px 0 0 -0.75px #dbdbdb, -1.25px 0 0 -0.75px #dbdbdb, 0 0 0 0.5px #dbdbdb;
+  --liquid-surface:
+    linear-gradient(0deg, rgb(191 191 191 / 10%), rgb(191 191 191 / 10%)),
+    rgb(255 255 255 / 70%);
+  --liquid-edge:
+    inset 0 1px 0 rgb(255 255 255 / 95%), inset 0 -1px 0 rgb(255 255 255 / 65%),
+    inset 0 6px 8px -8px rgb(40 40 40 / 50%),
+    inset 0 -6px 8px -8px rgb(40 40 40 / 35%);
+}
+
+.search-box,
+.tab-segment,
+.titlebar > .icon-button,
+.selection-actions,
+.entry-menu,
+.secondary,
+.copy-action {
+  background: var(--liquid-surface);
+  background-blend-mode: darken, lighten;
+  border: 0;
+  box-shadow:
+    var(--liquid-rim),
+    var(--liquid-edge),
+    0 8px 15px rgb(0 0 0 / 2%);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+}
+
+.search-box:focus-within {
+  box-shadow:
+    0 0 0 2px rgb(0 136 255 / 65%),
+    var(--liquid-edge);
+}
+
+.titlebar > .icon-button,
+.secondary,
+.copy-action {
+  border-radius: 1000px;
+}
+
+.titlebar > .icon-button:hover,
+.secondary:hover,
+.copy-action:hover {
+  background: rgb(255 255 255 / 90%);
+}
+
+.tab-segment::before,
+.paste-action,
+.primary {
+  /* The reference blue Tint sits on a 94% white backing. These edge
+     highlights approximate the overlaid Glass layer in the browser. */
+  background: linear-gradient(180deg, #269bff, #0079eb);
+  border-radius: 1000px;
+  color: white;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 75%),
+    inset 0 -1px 1px rgb(0 55 136 / 30%),
+    inset 1px 0 1px rgb(255 255 255 / 40%),
+    inset -1px 0 1px rgb(255 255 255 / 40%),
+    0 2px 6px rgb(0 85 190 / 18%);
+}
+
+.paste-action:hover,
+.primary:hover {
+  background: linear-gradient(180deg, #168df5, #006ddd);
+}
+
+.selection-actions {
+  position: absolute;
+  z-index: 2;
+  inset: auto 13px 13px;
+  isolation: isolate;
+  min-height: 55px;
+  margin: 0;
+  padding: 8px;
+  border-radius: 1000px;
+  /* Dock height and its 0.5px outline come from the inspected Dock.
+     Its unexported fill blend modes are approximated for a light panel. */
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 58%), rgb(255 255 255 / 24%)),
+    rgb(215 224 238 / 45%);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 25%),
+    var(--liquid-edge),
+    0 8px 22px rgb(37 51 78 / 14%);
+}
+
+.selection-actions::before,
+.entry-menu::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  border: 1px solid rgb(255 255 255 / 45%);
+  background: linear-gradient(
+    115deg,
+    rgb(255 255 255 / 18%),
+    transparent 30% 70%,
+    rgb(255 255 255 / 12%)
+  );
+  z-index: -1;
+}
+
+.selection-actions .icon-button {
+  color: #34445c;
+  border-radius: 1000px;
+}
+
+.selection-actions .icon-button:hover {
+  background: rgb(255 255 255 / 65%);
+  box-shadow:
+    inset 0 1px 0 white,
+    0 1px 3px rgb(0 0 0 / 8%);
+}
+
+.selection-actions .delete-button:hover {
+  color: #d62d25;
+}
+
+.selection-actions .paste-action {
+  height: 36px;
+  padding-inline: 16px;
+}
+
+.entry-menu {
+  isolation: isolate;
+  padding: 5px;
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 64%), rgb(255 255 255 / 35%)),
+    rgb(217 217 217 / 55%);
+  box-shadow:
+    var(--liquid-rim),
+    var(--liquid-edge),
+    0 8px 48px rgb(0 0 0 / 25%);
+}
+
+.entry-menu button {
+  border-radius: 7px;
+}
+
+.entry-menu button:focus,
+.entry-menu button:hover {
+  color: #fff;
+  background: #087fe9;
+}
+
+.entry-menu .entry-menu-delete:focus,
+.entry-menu .entry-menu-delete:hover {
+  color: #fff;
+  background: #d93630;
+}
+
+.setting-row select,
+.danger-text {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 1000px;
+  background: var(--liquid-surface);
+  box-shadow:
+    var(--liquid-rim),
+    var(--liquid-edge),
+    0 3px 8px rgb(0 0 0 / 4%);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.setting-row select {
+  cursor: pointer;
+  padding-inline: 12px;
+}
+
+/* Keep native select semantics and keyboard handling, with a styled picker
+   where the embedded browser supports customizable selects. */
+@supports (appearance: base-select) {
+  .setting-row select,
+  .setting-row select::picker(select) {
+    appearance: base-select;
+  }
+  .setting-row select {
+    align-items: center;
+    gap: 12px;
+  }
+  .setting-row select::picker(select) {
+    padding: 5px;
+    margin-top: 6px;
+    border: 1px solid #dbdbdb;
+    border-radius: 12px;
+    background: rgb(246 248 252 / 94%);
+    backdrop-filter: blur(16px);
+    box-shadow:
+      var(--liquid-edge),
+      0 8px 24px rgb(0 0 0 / 18%);
+    color: var(--text-primary);
+  }
+  .setting-row select option {
+    min-height: 34px;
+    padding: 7px 10px;
+    border-radius: 7px;
+  }
+  .setting-row select option:checked {
+    font-weight: 600;
+  }
+  .setting-row select option:hover,
+  .setting-row select option:focus {
+    color: white;
+    background: #087fe9;
+  }
+}
+
+.startup-switch {
+  min-width: 64px;
+  padding: 6px 8px;
+  border-radius: 14px;
+}
+
+.switch-track {
+  width: 44px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 1000px;
+  background: #8794a6;
+  box-shadow:
+    inset 0 1px 3px rgb(0 0 0 / 20%),
+    0 1px 0 white;
+}
+
+.switch-track > span {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(180deg, white, #e9eef5);
+  box-shadow:
+    inset 0 0 0 0.5px white,
+    0 2px 4px rgb(0 0 0 / 24%);
+}
+
+.startup-switch[aria-checked="true"] .switch-track {
+  background: #0088ff;
+  justify-content: flex-start;
+}
+
+.startup-switch[aria-checked="true"] .switch-track > span {
+  transform: translateX(18px);
+}
+
+.danger-text {
+  color: #c42b24;
+}
+
+.danger-text:hover {
+  background: #fff0ee;
+}
+
+.danger {
+  border-radius: 1000px;
+  background: linear-gradient(180deg, #ef5148, #ce2922);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 65%),
+    0 2px 6px rgb(180 35 25 / 16%);
+}
+
+.dialog-footer.confirm-clear {
+  justify-content: flex-end;
+}
+
+.confirm-clear > span {
+  flex-basis: 100%;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.setting-row select:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .setting-row select,
+  .danger-text,
+  .search-box,
+  .tab-segment,
+  .titlebar > .icon-button,
+  .selection-actions,
+  .entry-menu,
+  .secondary,
+  .copy-action {
+    background: #f4f6fa;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .selection-actions::before,
+  .entry-menu::before {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .setting-row select,
+  .danger-text,
+  .danger,
+  .search-box,
+  .tab-segment,
+  .titlebar > .icon-button,
+  .selection-actions,
+  .entry-menu,
+  .secondary,
+  .copy-action,
+  .paste-action,
+  .primary {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid ButtonText;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .selection-actions::before,
+  .entry-menu::before {
+    display: none;
+  }
+  .entry-menu button:focus {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .switch-track {
+    background: Canvas;
+    border: 1px solid ButtonText;
+  }
+  .switch-track > span,
+  .startup-switch[aria-checked="true"] .switch-track {
+    background: Highlight;
+  }
+  .startup-switch[aria-checked="true"] .switch-track > span {
+    background: HighlightText;
+  }
+}
