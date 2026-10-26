@@ -47,6 +47,7 @@ type ClipboardService struct {
 	captureEpoch       uint64
 	lastCaptured       uint32
 	captures           chan captureJob
+	cleanupDate        string // Protected by opMu; only successful maintenance advances it.
 }
 
 func dataDirectory() (string, error) {
@@ -75,6 +76,7 @@ func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.Ser
 		return err
 	}
 	s.store = store
+	s.cleanupHistory()
 	s.paused = store.Paused()
 	s.ctx, s.cancel = context.WithCancel(ctx)
 	m, err := native.Watch(s.ctx)
@@ -88,6 +90,7 @@ func (s *ClipboardService) ServiceStartup(ctx context.Context, _ application.Ser
 	s.captures = make(chan captureJob, 1)
 	s.wg.Add(2)
 	go s.processCaptures()
+	s.wg.Go(s.maintainHistory)
 	go func() {
 		defer s.wg.Done()
 		for {
@@ -122,6 +125,7 @@ func (s *ClipboardService) report(err error) {
 }
 
 func (s *ClipboardService) List(query string, pinned bool, offset int) (history.Page, error) {
+	s.cleanupHistory()
 	return s.store.List(query, pinned, offset)
 }
 func (s *ClipboardService) Get(id int64) (history.Entry, error) { return s.store.Get(id) }

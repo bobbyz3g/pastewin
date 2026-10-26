@@ -43,12 +43,20 @@ export function Delete(id: number): $CancellablePromise<void> {
     return $Call.ByID(3388738656, id);
 }
 
+export function ExpiredCount(days: number): $CancellablePromise<number> {
+    return $Call.ByID(4219425799, days);
+}
+
 export function Get(id: number): $CancellablePromise<history$0.Entry> {
     return $Call.ByID(3081495245, id);
 }
 
 export function Hide(): $CancellablePromise<void> {
     return $Call.ByID(360938931);
+}
+
+export function HistorySettings(): $CancellablePromise<history$0.HistorySettings> {
+    return $Call.ByID(3932896640);
 }
 
 export function Language(): $CancellablePromise<string> {
@@ -92,6 +100,10 @@ export function SetLanguage(language: string): $CancellablePromise<void> {
 
 export function SetPaused(paused: boolean): $CancellablePromise<void> {
     return $Call.ByID(3771133327, paused);
+}
+
+export function SetRetentionDays(days: number): $CancellablePromise<void> {
+    return $Call.ByID(2503849922, days);
 }
 
 export function Status(): $CancellablePromise<$models.Status> {

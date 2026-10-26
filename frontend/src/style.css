@@ -915,6 +915,27 @@ dialog::backdrop {
   border-radius: 50%;
 }
 
+.retention-confirmation {
+  padding: 10px 0;
+  font-size: 12px;
+}
+.retention-confirmation p {
+  margin: 0 0 10px;
+}
+.retention-confirmation > div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.history-space {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.history-settings > .setting-error {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
 .setting-row {
   display: flex;
   min-height: 71px;

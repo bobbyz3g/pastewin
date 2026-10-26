@@ -56,8 +56,48 @@ entries.unshift(
 );
 let paused = false;
 let autoStart = false;
+const savedRetention = Number(
+  localStorage.getItem("pastewin.preview.retentionDays"),
+);
+let retentionDays = [7, 30, 90].includes(savedRetention) ? savedRetention : 30;
+function expirationCutoff(days: number) {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() - days + 1);
+  return date.getTime();
+}
+function cleanupExpired() {
+  const cutoff = expirationCutoff(retentionDays);
+  entries = entries.filter(
+    (entry) => entry.pinned || entry.updatedAt >= cutoff,
+  );
+}
 const changed = () => window.dispatchEvent(new CustomEvent("history:changed"));
 export const demo = {
+  async HistorySettings() {
+    return {
+      retentionDays,
+      usedBytes: entries.reduce(
+        (total, entry) =>
+          total +
+          new TextEncoder().encode(entry.text).length +
+          entry.imageBytes,
+        0,
+      ),
+    };
+  },
+  async ExpiredCount(days: number) {
+    return entries.filter(
+      (entry) => !entry.pinned && entry.updatedAt < expirationCutoff(days),
+    ).length;
+  },
+  async SetRetentionDays(days: number) {
+    if (![7, 30, 90].includes(days)) throw Error("无效的保留期限");
+    retentionDays = days;
+    localStorage.setItem("pastewin.preview.retentionDays", String(days));
+    cleanupExpired();
+    changed();
+  },
   async CheckForUpdates(): Promise<UpdateResult> {
     const state =
       new URLSearchParams(location.search).get("update") ?? "current";
@@ -110,6 +150,7 @@ export const demo = {
   },
   async Pin(id: number, pinned: boolean) {
     entries = entries.map((e) => (e.id === id ? { ...e, pinned } : e));
+    cleanupExpired();
     changed();
   },
   async Delete(id: number) {

@@ -26,6 +26,7 @@ import { api, imageURL, listen, preview, type Entry, type Status } from "./api";
 import { useHistory } from "./useHistory";
 import { EntryMenu } from "./EntryMenu";
 import { UpdateCheck } from "./UpdateCheck";
+import { HistorySettings } from "./HistorySettings";
 import buildInfo from "../../build/windows/info.json";
 import "./style.css";
 import "./liquid-glass.css";
@@ -947,6 +948,7 @@ export default function App() {
             </span>
           </button>
         </div>
+        {settings && <HistorySettings disabled={busy} />}
         {settings && <UpdateCheck version={buildInfo.fixed.file_version} />}
         <div className={`dialog-footer ${confirmClear ? "confirm-clear" : ""}`}>
           {confirmClear ? (

@@ -17,7 +17,6 @@ import (
 )
 
 const MaxTextBytes = 1 << 20
-const MaxEntries = 500
 const MaxImageBytes = 256 << 20
 
 type Entry struct {
@@ -47,6 +46,7 @@ type Store struct {
 	db         *sql.DB
 	mu         sync.Mutex
 	imageLimit int64
+	now        func() time.Time
 }
 
 func Open(path string) (*Store, error) {
@@ -70,7 +70,7 @@ func Open(path string) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
-	return &Store{db: db, imageLimit: MaxImageBytes}, nil
+	return &Store{db: db, imageLimit: MaxImageBytes, now: time.Now}, nil
 }
 
 func migrate(db *sql.DB) error {
@@ -162,7 +162,8 @@ func (s *Store) AddContent(text string, img *clipimage.Image, sources ...string)
 			return err
 		}
 	}
-	now := time.Now().UnixMilli()
+	capturedAt := s.now()
+	now := capturedAt.UnixMilli()
 	_, err = tx.Exec(`INSERT INTO clips(hash,text,characters,created_at,updated_at,source_key) VALUES(?,?,?,?,?,?)
 	ON CONFLICT(hash) DO UPDATE SET updated_at=excluded.updated_at,source_key=excluded.source_key`, key, text, utf8.RuneCountInString(text), now, now, sourceKey)
 	if err != nil {
@@ -170,6 +171,9 @@ func (s *Store) AddContent(text string, img *clipimage.Image, sources ...string)
 	}
 	var id int64
 	if err = tx.QueryRow(`SELECT id FROM clips WHERE hash=?`, key).Scan(&id); err != nil {
+		return err
+	}
+	if _, err = cleanupExpired(tx, capturedAt); err != nil {
 		return err
 	}
 	if img != nil {
@@ -195,20 +199,6 @@ func (s *Store) AddContent(text string, img *clipimage.Image, sources ...string)
 				return err
 			}
 			total -= size
-		}
-	}
-	// Pins count toward the same hard cap; only unpinned items may be evicted.
-	_, err = tx.Exec(`DELETE FROM clips WHERE id IN (SELECT id FROM clips WHERE pinned=0 ORDER BY updated_at ASC,id ASC LIMIT MAX(0,(SELECT COUNT(*) FROM clips)-?))`, MaxEntries)
-	if err != nil {
-		return err
-	}
-	if img != nil {
-		var kept int
-		if err = tx.QueryRow(`SELECT COUNT(*) FROM clips WHERE id=?`, id).Scan(&kept); err != nil {
-			return err
-		}
-		if kept == 0 {
-			return errors.New("历史已满且均已收藏，图片未保存")
 		}
 	}
 	return tx.Commit()
@@ -275,8 +265,24 @@ func (s *Store) Image(id int64, thumbnail bool) ([]byte, error) {
 func (s *Store) Pin(id int64, pinned bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	_, err := s.db.Exec(`UPDATE clips SET pinned=? WHERE id=?`, pinned, id)
-	return err
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.Exec(`UPDATE clips SET pinned=? WHERE id=?`, pinned, id); err != nil {
+		return err
+	}
+	if !pinned {
+		days, err := retentionDays(tx)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(`DELETE FROM clips WHERE id=? AND pinned=0 AND updated_at<?`, id, retentionCutoff(s.now(), days)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 func (s *Store) Delete(id int64) error {
 	s.mu.Lock()

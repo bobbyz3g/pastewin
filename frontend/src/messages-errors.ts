@@ -1,4 +1,5 @@
 export const englishErrors: Record<string, string> = {
+  无效的保留期限: "Invalid retention period.",
   "无法检查更新，请检查网络连接": "Unable to check. Check your connection.",
   "请求过多，请稍后再试": "Too many requests. Try again later.",
   暂无正式版本: "No stable release available.",

@@ -21,6 +21,8 @@ type I18n = {
 };
 const Context = createContext<I18n | null>(null);
 const englishOne: Partial<Record<Message, string>> = {
+  "将删除 {count} 条过期记录，收藏不受影响。":
+    "Delete {count} expired record? Favorites are kept.",
   "{count} 字符": "{count} character",
   "{count} 条匹配": "{count} match",
   "{count} 条记录": "{count} record",

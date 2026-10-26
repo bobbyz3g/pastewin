@@ -35,6 +35,10 @@ export interface UpdateResult {
   version: string;
   tag: string;
 }
+export interface HistorySettings {
+  retentionDays: number;
+  usedBytes: number;
+}
 export const preview =
   import.meta.env.DEV &&
   new URLSearchParams(location.search).get("preview") === "1";
@@ -45,6 +49,9 @@ export const imageURL = (entry: Entry, thumbnail = false) =>
     : `/history-image/${entry.id}/${thumbnail ? "thumbnail" : "image"}.png`;
 
 interface API {
+  HistorySettings(): Promise<HistorySettings>;
+  ExpiredCount(days: number): Promise<number>;
+  SetRetentionDays(days: number): Promise<void>;
   CheckForUpdates(): Promise<UpdateResult>;
   OpenUpdateRelease(tag: string): Promise<void>;
   Language(): Promise<string>;

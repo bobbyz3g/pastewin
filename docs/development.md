@@ -61,6 +61,8 @@ Browser tests use installed Microsoft Edge in headless mode and synthetic data. 
 
 Go tests cover text preservation, deduplication, favorites, capacity, search, pagination, persistence, image conversion and limits, database migration, image cleanup, stale capture jobs, resource paths, and isolated startup registration.
 
+Retention tests use an injected clock and temporary databases to check local calendar boundaries (including DST), duplicate refresh, expired favorites, persistent policy changes, and logical storage usage. Service tests ensure cleanup does not invalidate pending captures and still runs when capture is paused. Browser retention tests cover confirmation, live usage updates, stale responses, errors, and both settings languages at both window sizes.
+
 Native image integration tests are skipped by default. These commands **replace the system clipboard with synthetic content**. Run the packages separately to avoid clipboard contention:
 
 ```powershell

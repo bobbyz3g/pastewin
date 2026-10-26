@@ -3,5 +3,6 @@
 
 export type {
     Entry,
+    HistorySettings,
     Page
 } from "./models.js";

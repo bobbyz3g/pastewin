@@ -169,29 +169,29 @@ func TestOldDatabaseMigrationPreservesTextAndSettings(t *testing.T) {
 	}
 }
 
-func TestEntryLimitCleansImagePayloads(t *testing.T) {
+func TestImagesSurviveMoreThan500Entries(t *testing.T) {
 	s := newStore(t)
 	if err := s.AddContent("", testImage(t, 50)); err != nil {
 		t.Fatal(err)
 	}
-	for i := 0; i < MaxEntries; i++ {
+	for i := 0; i < 500; i++ {
 		if err := s.Add(string(rune(0x4e00 + i))); err != nil {
 			t.Fatal(err)
 		}
 	}
 	var count int
 	s.db.QueryRow(`SELECT COUNT(*) FROM clip_images`).Scan(&count)
-	if count != 0 {
-		t.Fatal("entry eviction orphaned image data")
+	if count != 1 {
+		t.Fatal("entry count evicted image data")
 	}
 	if _, err := s.db.Exec(`UPDATE clips SET pinned=1`); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.AddContent("", testImage(t, 70)); err == nil {
-		t.Fatal("full pinned history silently accepted image")
+	if err := s.AddContent("", testImage(t, 70)); err != nil {
+		t.Fatal(err)
 	}
 	p, _ := s.List("", false, 0)
-	if p.All != MaxEntries || p.Pinned != MaxEntries {
+	if p.All != 502 || p.Pinned != 501 {
 		t.Fatal("pins lost")
 	}
 }

@@ -17,6 +17,15 @@ export interface Entry {
     "imageBytes": number;
 }
 
+/**
+ * HistorySettings reports the retention policy and logical payload size,
+ * including favorites, UTF-8 text, original images and thumbnails.
+ */
+export interface HistorySettings {
+    "retentionDays": number;
+    "usedBytes": number;
+}
+
 export interface Page {
     "entries": Entry[] | null;
     "total": number;

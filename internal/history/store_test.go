@@ -45,13 +45,13 @@ func TestRetentionClearAndLiteralSearch(t *testing.T) {
 	p, _ := s.List("", false, 0)
 	id := p.Entries[0].ID
 	_ = s.Pin(id, true)
-	for i := 0; i < MaxEntries+8; i++ {
+	for i := 0; i < 508; i++ {
 		if err := s.Add(fmt.Sprintf("item %04d", i)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	p, err := s.List("", false, 0)
-	if err != nil || p.All != MaxEntries || len(p.Entries) != 50 {
+	if err != nil || p.All != 509 || len(p.Entries) != 50 {
 		t.Fatalf("retention/page: %+v %v", p, err)
 	}
 	p, _ = s.List("%_", false, 0)

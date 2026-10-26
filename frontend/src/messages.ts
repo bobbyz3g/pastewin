@@ -1,4 +1,11 @@
 export const english = {
+  保留期限: "Keep history",
+  收藏不自动清理: "Favorites are kept",
+  "{days} 天": "{days} days",
+  已用空间: "Space used",
+  "将删除 {count} 条过期记录，收藏不受影响。":
+    "Delete {count} expired records? Favorites are kept.",
+  修改并清理: "Apply and clear",
   "图片无法读取，请刷新或重新选择":
     "Unable to load image. Refresh or select it again.",
   "预览：已模拟复制": "Preview: copy simulated",
