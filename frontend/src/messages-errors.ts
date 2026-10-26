@@ -1,4 +1,13 @@
 export const englishErrors: Record<string, string> = {
+  "无法检查更新，请检查网络连接": "Unable to check. Check your connection.",
+  "请求过多，请稍后再试": "Too many requests. Try again later.",
+  暂无正式版本: "No stable release available.",
+  "更新服务暂不可用，请稍后重试":
+    "Update service unavailable. Try again later.",
+  无法识别版本信息: "Unable to read version information.",
+  "无法打开浏览器，请稍后重试": "Unable to open browser. Try again later.",
+  "无法检查更新，请稍后重试": "Unable to check. Try again later.",
+  "无法打开发布页，请重试": "Unable to open release page. Try again.",
   "正在粘贴，请稍候": "Pasting. Please wait.",
   "请在目标应用中按 Ctrl+Shift+V 打开面板；也可以点击复制":
     "Press Ctrl+Shift+V in the target app to open PasteWin, or use Copy.",

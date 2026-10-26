@@ -8,6 +8,9 @@ import { Call as $Call, CancellablePromise as $CancellablePromise } from "@wails
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as history$0 from "./internal/history/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as updatecheck$0 from "./internal/updatecheck/models.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -15,6 +18,13 @@ import * as $models from "./models.js";
 
 export function AutoStart(): $CancellablePromise<boolean> {
     return $Call.ByID(3083968484);
+}
+
+/**
+ * CheckForUpdates checks only when requested by the settings UI.
+ */
+export function CheckForUpdates(): $CancellablePromise<updatecheck$0.Result> {
+    return $Call.ByID(2274612230);
 }
 
 export function ClearUnpinned(): $CancellablePromise<void> {
@@ -47,6 +57,13 @@ export function Language(): $CancellablePromise<string> {
 
 export function List(query: string, pinned: boolean, offset: number): $CancellablePromise<history$0.Page> {
     return $Call.ByID(3681129803, query, pinned, offset);
+}
+
+/**
+ * OpenUpdateRelease opens a validated project release in the default browser.
+ */
+export function OpenUpdateRelease(tag: string): $CancellablePromise<void> {
+    return $Call.ByID(712909223, tag);
 }
 
 export function Paste(id: number): $CancellablePromise<void> {

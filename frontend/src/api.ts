@@ -30,6 +30,11 @@ export interface Status {
   databasePath: string;
   canPaste: boolean;
 }
+export interface UpdateResult {
+  status: string;
+  version: string;
+  tag: string;
+}
 export const preview =
   import.meta.env.DEV &&
   new URLSearchParams(location.search).get("preview") === "1";
@@ -40,6 +45,8 @@ export const imageURL = (entry: Entry, thumbnail = false) =>
     : `/history-image/${entry.id}/${thumbnail ? "thumbnail" : "image"}.png`;
 
 interface API {
+  CheckForUpdates(): Promise<UpdateResult>;
+  OpenUpdateRelease(tag: string): Promise<void>;
   Language(): Promise<string>;
   SetLanguage(language: string): Promise<void>;
   List(query: string, pinned: boolean, offset: number): Promise<Page>;

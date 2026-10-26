@@ -18,7 +18,6 @@ import {
   ScanText,
   Search,
   Settings,
-  ShieldCheck,
   Star,
   Trash2,
   X,
@@ -26,6 +25,7 @@ import {
 import { api, imageURL, listen, preview, type Entry, type Status } from "./api";
 import { useHistory } from "./useHistory";
 import { EntryMenu } from "./EntryMenu";
+import { UpdateCheck } from "./UpdateCheck";
 import buildInfo from "../../build/windows/info.json";
 import "./style.css";
 import "./liquid-glass.css";
@@ -938,13 +938,7 @@ export default function App() {
               void perform(async () => {
                 const enabled = await api("SetAutoStart", !autoStart);
                 setAutoStart(enabled);
-                notify(
-                  preview
-                    ? t("仅供预览，未更改开机启动。")
-                    : enabled
-                      ? t("已开启开机启动")
-                      : t("已关闭开机启动"),
-                );
+                if (preview) notify(t("仅供预览，未更改开机启动。"));
               })
             }
           >
@@ -953,27 +947,7 @@ export default function App() {
             </span>
           </button>
         </div>
-        <div className="storage-note">
-          <ShieldCheck size={20} />
-          <div>
-            <strong>{t("本机保存")}</strong>
-            <p>{t("最多保存500条，收藏不自动删除。")}</p>
-            <p>{t("内容未加密，复制隐私信息前请暂停。")}</p>
-            <code>
-              {status?.databasePath &&
-                (preview ? t("界面预览") : status.databasePath)}
-            </code>
-          </div>
-        </div>
-        <section className="about-section" aria-labelledby="about-title">
-          <div className="about-heading">
-            <h3 id="about-title">{t("关于")}</h3>
-            <span className="app-version">
-              {t("版本 {version}", { version: buildInfo.fixed.file_version })}
-            </span>
-          </div>
-          <p>{t("保存复制过的文字和图片。")}</p>
-        </section>
+        {settings && <UpdateCheck version={buildInfo.fixed.file_version} />}
         <div className={`dialog-footer ${confirmClear ? "confirm-clear" : ""}`}>
           {confirmClear ? (
             <>

@@ -925,8 +925,7 @@ dialog::backdrop {
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.setting-row strong,
-.storage-note strong {
+.setting-row strong {
   font-size: 12px;
   font-weight: 600;
   color: var(--text-primary);
@@ -974,17 +973,6 @@ dialog::backdrop {
   outline-offset: 2px;
 }
 
-.storage-note {
-  display: flex;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.5);
-  padding: 14px;
-  border-radius: var(--radius-md);
-  margin: 16px 0;
-  color: var(--text-secondary);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
 .startup-switch {
   flex-direction: column;
   gap: 5px;
@@ -1025,63 +1013,54 @@ dialog::backdrop {
   overflow-wrap: anywhere;
 }
 
-.storage-note svg {
-  flex: none;
-  width: 18px;
-}
-
-.storage-note p {
-  font-size: 11px;
-  line-height: 1.6;
-  margin-top: 6px;
-}
-
-.storage-note code {
-  display: block;
-  font-size: 10px;
-  overflow-wrap: anywhere;
-  margin-top: 8px;
-  color: var(--text-tertiary);
-  font-weight: 500;
-}
-
-.about-section {
-  padding: 0 0 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.about-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px 12px;
-}
-
-.about-heading h3 {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
 .app-version {
-  font-size: 11px;
-  color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
   user-select: text;
   overflow-wrap: anywhere;
 }
 
-.about-section p {
-  margin-top: 6px;
+.update-check-row {
+  margin-bottom: 16px;
+}
+
+.update-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.update-status {
+  overflow-wrap: anywhere;
   font-size: 11px;
-  line-height: 1.6;
+  line-height: 1.5;
   color: var(--text-secondary);
 }
 
+.update-status:not(:empty) {
+  margin-top: 6px;
+}
+
+.update-status.error {
+  color: #d62d25;
+}
+
+.update-version {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-blue);
+}
+
+.update-check-row .update-button {
+  flex: none;
+  min-height: 32px;
+  padding: 0 16px;
+}
+
+@media (forced-colors: active) {
+  .update-status.error,
+  .update-version {
+    color: CanvasText;
+  }
+}
 .dialog-footer {
   display: flex;
   flex-wrap: wrap;

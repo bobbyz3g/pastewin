@@ -23,6 +23,7 @@ Source app icons are shown for newly captured records when Windows can identify 
 - **Favorites and cleanup** — keep useful records, delete individual items, or clear records that are not favorites.
 - **Background operation** — record from the tray, pause capture, or enable optional startup at Windows sign-in.
 - **Local storage** — save history on disk without uploading clipboard content.
+- **Check for updates** — manually check the latest stable release in Settings → Version, then open its GitHub page to read release notes and download the installer.
 
 ## Install and run
 
@@ -62,6 +63,8 @@ To change the language, open **设置** (Settings) and select **English** or **�
 Closing the panel keeps PasteWin running in the tray. Choose **Quit app** in settings or **Exit** in the tray menu to stop it. **Start at sign-in** is off by default; when enabled, PasteWin starts in the tray without opening the panel. After moving a portable executable, enable startup again to register its new path. Windows startup settings or organization policies can still block automatic startup.
 
 ## Data and limitations
+
+Update checks connect to GitHub only when you click the check button; they do not send clipboard content. Results reset when settings close. Updates are not downloaded or installed by the app.
 
 History, images, and favorites are stored in `%APPDATA%\PasteWin\history.db`. Storage is **local and unencrypted**. PasteWin honors supported clipboard exclusion flags, but cannot identify every password or sensitive item. Pause capture when needed.
 

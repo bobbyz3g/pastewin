@@ -1,5 +1,6 @@
 // Explicit development-only browser fixture. Never reads the system clipboard.
-import type { Entry, Status } from "./api";
+import type { Entry, Status, UpdateResult } from "./api";
+import buildInfo from "../../build/windows/info.json";
 const now = Date.now();
 let entries: Entry[] = [
   "把灵感留住，把重复交给剪贴板。\n\nPasteWin 是一个安静的本地工作台。复制文字后，按 Ctrl + Shift + V，随时找回你需要的那一条。\n\n所有记录保存在本机，随时可以暂停、收藏或删除。",
@@ -57,6 +58,32 @@ let paused = false;
 let autoStart = false;
 const changed = () => window.dispatchEvent(new CustomEvent("history:changed"));
 export const demo = {
+  async CheckForUpdates(): Promise<UpdateResult> {
+    const state =
+      new URLSearchParams(location.search).get("update") ?? "current";
+    if (state === "error") throw Error("无法检查更新，请稍后重试");
+    if (state === "slow")
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+    const parts = buildInfo.fixed.file_version.split(".").map(Number);
+    if (state === "available" || state === "slow") parts[2] += 1;
+    const version = parts.join(".");
+    return {
+      status:
+        state === "available" || state === "slow"
+          ? "available"
+          : state === "ahead"
+            ? "ahead"
+            : "current",
+      version,
+      tag: version,
+    };
+  },
+  async OpenUpdateRelease(tag: string) {
+    // Preview reports the action without opening a browser or downloading files.
+    window.dispatchEvent(
+      new CustomEvent("preview:update-release", { detail: tag }),
+    );
+  },
   async Language() {
     return localStorage.getItem("pastewin.preview.language") ?? "zh-CN";
   },
