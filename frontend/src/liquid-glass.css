@@ -159,7 +159,6 @@
   background: #d93630;
 }
 
-.setting-row select,
 .danger-text {
   min-height: 36px;
   padding: 0 14px;
@@ -176,7 +175,21 @@
 
 .setting-row select {
   cursor: pointer;
-  padding-inline: 12px;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid rgb(42 52 74 / 12%);
+  border-radius: 8px;
+  background: linear-gradient(#ffffffeb, #f5f6fae6);
+  box-shadow:
+    0 1px 2px rgb(25 35 55 / 9%),
+    inset 0 1px 0 #fff;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.setting-row select:hover:not(:disabled) {
+  border-color: rgb(42 52 74 / 23%);
+  background: #fff;
 }
 
 /* Keep native select semantics and keyboard handling, with a styled picker
@@ -188,32 +201,75 @@
   }
   .setting-row select {
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    justify-content: space-between;
+  }
+  .setting-row select::picker-icon {
+    content: "";
+    width: 16px;
+    height: 20px;
+    flex: none;
+    color: var(--accent-blue);
+    background: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 20'%3E%3Cpath d='m5 7 3-3 3 3M5 13l3 3 3-3' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+    rotate: none;
+  }
+  .setting-row select:open {
+    border-color: rgb(0 122 255 / 35%);
+    background: #eef5ff;
   }
   .setting-row select::picker(select) {
     padding: 5px;
-    margin-top: 6px;
-    border: 1px solid #dbdbdb;
-    border-radius: 12px;
-    background: rgb(246 248 252 / 94%);
-    backdrop-filter: blur(16px);
+    margin-top: 4px;
+    min-width: 144px;
+    max-width: calc(100vw - 24px);
+    border: 1px solid rgb(255 255 255 / 72%);
+    border-radius: 14px;
+    /* Keep the fill translucent: an opaque picker hides its backdrop blur. */
+    background:
+      linear-gradient(
+        135deg,
+        rgb(255 255 255 / 60%),
+        rgb(255 255 255 / 8%) 42%,
+        rgb(197 214 248 / 18%) 75%,
+        rgb(255 255 255 / 40%)
+      ),
+      rgb(240 244 252 / 42%);
+    backdrop-filter: blur(14px) saturate(180%);
+    -webkit-backdrop-filter: blur(14px) saturate(180%);
     box-shadow:
-      var(--liquid-edge),
-      0 8px 24px rgb(0 0 0 / 18%);
+      inset 0 1px 1px rgb(255 255 255 / 95%),
+      inset 1px 0 1px rgb(255 255 255 / 65%),
+      inset 0 -1px 1px rgb(255 255 255 / 75%),
+      inset 0 0 8px rgb(255 255 255 / 30%),
+      0 0 0 0.5px rgb(64 80 110 / 16%),
+      0 12px 28px rgb(30 45 75 / 20%),
+      0 3px 8px rgb(30 45 75 / 10%);
     color: var(--text-primary);
   }
   .setting-row select option {
-    min-height: 34px;
-    padding: 7px 10px;
-    border-radius: 7px;
+    min-height: 30px;
+    padding: 6px 9px;
+    gap: 8px;
+    border-radius: 8px;
+    font-weight: 400;
   }
-  .setting-row select option:checked {
-    font-weight: 600;
+  .setting-row select option::checkmark {
+    order: -1;
+    width: 14px;
+    flex: none;
+    font-size: 12px;
   }
   .setting-row select option:hover,
   .setting-row select option:focus {
+    /* The filled row already indicates focus; suppress Chromium's black ring. */
+    outline: none;
     color: white;
-    background: #087fe9;
+    background: linear-gradient(rgb(53 157 255 / 92%), rgb(0 112 242 / 90%));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 30%),
+      0 1px 3px rgb(0 90 200 / 15%);
   }
 }
 
@@ -284,6 +340,11 @@
 }
 
 @media (prefers-reduced-transparency: reduce) {
+  .setting-row select::picker(select) {
+    background: #fafafd;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
   .setting-row select,
   .danger-text,
   .search-box,
@@ -304,6 +365,26 @@
 }
 
 @media (forced-colors: active) {
+  .setting-row select::picker(select) {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid ButtonText;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .setting-row select::picker-icon {
+    color: ButtonText;
+    forced-color-adjust: none;
+  }
+  .setting-row select option:hover,
+  .setting-row select option:focus {
+    background: Highlight;
+    color: HighlightText;
+    box-shadow: none;
+    outline: 1px solid HighlightText;
+    outline-offset: -2px;
+  }
   .setting-row select,
   .danger-text,
   .danger,

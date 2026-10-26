@@ -830,12 +830,9 @@ export default function App() {
         className="settings-dialog"
         onKeyDown={(e) => {
           if (e.key !== "Escape") return;
-          // Let an open language picker consume Escape before its dialog.
-          if (
-            e.target instanceof HTMLSelectElement &&
-            e.target.matches(":open")
-          )
-            return;
+          // Customizable pickers target their option, rather than the select.
+          // Let the browser dismiss the picker before handling dialog Escape.
+          if (e.currentTarget.querySelector("select:open")) return;
           e.preventDefault();
           e.stopPropagation();
           if (!e.repeat && !e.nativeEvent.isComposing) setSettings(false);
