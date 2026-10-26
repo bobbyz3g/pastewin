@@ -4,6 +4,11 @@ test("settings pop-up menus preserve selection and dismiss before the dialog", a
   page,
 }, testInfo) => {
   await page.goto("/?preview=1");
+  // Bright enabled switches beneath both menus expose excessive transparency.
+  await page.evaluate(async () => {
+    const { demo } = await import("/src/preview.ts");
+    await demo.SetAutoStart(true);
+  });
   await page.getByRole("button", { name: "设置", exact: true }).click();
   const language = page.getByRole("combobox", { name: "语言" });
   await language.click();
